@@ -22389,9 +22389,9 @@ local.templateUiOperation = '\
 // https://github.com/swagger-api/swagger-ui/blob/v2.1.3/src/main/template/param.handlebars
 local.templateUiParam = '\
 <span class="td1">\n\
-    {{name}}\n\
+    {{name}}&nbsp;\n\
     {{#if required}}\n\
-    &nbsp;<span class="fontWeightBold">(required)</span>\n\
+    <span class="fontWeightBold">(required)</span>\n\
     {{/if required}}\n\
     {{#if description}}\n\
     <br>\n\
@@ -24169,6 +24169,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                 schema = options[schema] || {};
                 Object.keys(schema).forEach(function (key) {
                     if (schema[key]['x-swgg-tags0'] &&
+                            schema[key]['x-swgg-tags0'] !== 'all' &&
                             schema[key]['x-swgg-tags0'] !== local.env.npm_package_swggTags0) {
                         delete schema[key];
                     }
@@ -24179,6 +24180,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                 Object.keys(options.paths[path]).forEach(function (method) {
                     tmp = options.paths[path][method];
                     if (tmp['x-swgg-tags0'] &&
+                            tmp['x-swgg-tags0'] !== 'all' &&
                             tmp['x-swgg-tags0'] !== local.env.npm_package_swggTags0) {
                         delete options.paths[path][method];
                         return;
@@ -24190,7 +24192,8 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
             });
             // filter $npm_package_swggTags0 - tags
             options.tags = options.tags.filter(function (tag) {
-                return tag['x-swgg-tags0'] &&
+                return !tag['x-swgg-tags0'] ||
+                    tmp['x-swgg-tags0'] === 'all' ||
                     tag['x-swgg-tags0'] === local.env.npm_package_swggTags0;
             });
             return options;
@@ -24970,9 +24973,11 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                 local.tryCatchOnError(function () {
                     element = document.querySelector('#' + location.hash.slice(2));
                 }, local.nop);
-                element = element || document.querySelector(
-                    '.swggUiContainer .operation, .swggUiContainer .operation'
-                );
+                element = (element || { querySelector: local.nop}).querySelector('.operation') ||
+                    element ||
+                    document.querySelector(
+                        '.swggUiContainer .operation, .swggUiContainer .operation'
+                    );
                 parent = element.querySelector('.uiAnimateSlide');
                 while (parent) {
                     local.uiAnimateSlideDown(parent);
