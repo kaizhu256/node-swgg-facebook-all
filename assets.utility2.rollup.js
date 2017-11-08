@@ -14320,6 +14320,10 @@ body > button {\n\
 button {\n\
     cursor: pointer;\n\
 }\n\
+.textOverflowEllipsis {\n\
+    text-overflow: ellipsis;\n\
+    white-space: nowrap;\n\
+}\n\
 .uiAnimateSlide {\n\
     overflow-y: hidden;\n\
     transition: border-bottom 250ms, border-top 250ms, margin-bottom 250ms, margin-top 250ms, max-height 250ms, min-height 250ms, padding-bottom 250ms, padding-top 250ms;\n\
@@ -17485,24 +17489,6 @@ return Utf8ArrayToStr(bff);
                     match0.replace(match1, local.jsonStringifyOrdered(options.packageJson, null, 4))
                 );
             });
-            // init assets.swgg.swagger.json
-            if (local.fs.existsSync('assets.swgg.swagger.json')) {
-                // save assets.swgg.swagger.json
-                local.fs.writeFileSync('assets.swgg.swagger.json', local.jsonStringifyOrdered(
-                    // normalize assets.swgg.swagger.json
-                    local.objectSetOverride(local.swgg.normalizeSwaggerJson(JSON.parse(
-                        // read assets.swgg.swagger.json
-                        local.fs.readFileSync('assets.swgg.swagger.json', 'utf8')
-                    )), { info: {
-                        description: options.packageJson.description,
-                        title: options.packageJson.name,
-                        version: options.packageJson.version,
-                        'x-swgg-homepage': options.packageJson.homepage
-                    } }, 2),
-                    null,
-                    4
-                ) + '\n');
-            }
             // search-and-replace - customize dataTo
             [
                 // customize name and description
@@ -17613,6 +17599,33 @@ return Utf8ArrayToStr(bff);
                 .replace((/(\S)\n{3}(\S)/g), '$1\n\n$2');
             // save README.md
             local.fs.writeFileSync('README.md', options.dataTo);
+            // customize assets.swgg.swagger.json
+            if (local.fs.existsSync('assets.swgg.swagger.json')) {
+                // normalize assets.swgg.swagger.json
+                options.swaggerJson = local.swgg.normalizeSwaggerJson(JSON.parse(
+                    // read assets.swgg.swagger.json
+                    local.fs.readFileSync('assets.swgg.swagger.json', 'utf8')
+                ));
+                local.objectSetOverride(options.swaggerJson, { info: {
+                    description: options.packageJson.description,
+                    title: options.packageJson.name,
+                    version: options.packageJson.version,
+                    'x-swgg-downloadStandaloneApp': ((/\bhttps:\/\/.*?\/assets\.app\.js/).exec(
+                        options.dataTo.replace(new RegExp(
+                            'https:\/\/kaizhu256.github.io' +
+                                '\/node-utility2\/build..beta..travis-ci.org\/app\/assets.app.js',
+                            'g'
+                        ), '')
+                    ) || {})[0],
+                    'x-swgg-homepage': options.packageJson.homepage
+                } }, 2);
+                // save assets.swgg.swagger.json
+                local.fs.writeFileSync('assets.swgg.swagger.json', local.jsonStringifyOrdered(
+                    options.swaggerJson,
+                    null,
+                    4
+                ) + '\n');
+            }
             onError();
         };
 
@@ -22242,18 +22255,20 @@ local.templateUiMain = '\
     <div class="fontWeightBold">{{info.title htmlSafe}} ({{info.version htmlSafe}})</div>\n\
     {{/if info.x-swgg-homepage}}\n\
     {{#if info.description}}\n\
-    <div>{{info.description htmlSafe}}</div>\n\
+    <div>{{info.description htmlSafe br}}</div>\n\
     {{/if info.description}}\n\
-    {{#if info.x-swgg-urlApp}}\n\
-    <h4><a download href="{{info.x-swgg-urlApp}}">download standalone app</a></h4>\n\
-    {{/if info.x-swgg-urlApp}}\n\
+    {{#if info.x-swgg-downloadStandaloneApp}}\n\
+    <h4><a download href="{{info.x-swgg-downloadStandaloneApp}}">download standalone app</a></h4>\n\
+    {{/if info.x-swgg-downloadStandaloneApp}}\n\
     <ul>\n\
         {{#if externalDocs}}\n\
         <li>\n\
             {{#if externalDocs.description}}\n\
-            <p>{{externalDocs.description htmlSafe}}</p>\n\
+            <p>{{externalDocs.description htmlSafe br}}</p>\n\
             {{/if externalDocs.description}}\n\
+            {{#if externalDocs.url}}\n\
             <a href="{{externalDocs.url}}" target="_blank">{{externalDocs.url}}</a>\n\
+            {{/if externalDocs.url}}\n\
         </li>\n\
         {{/if externalDocs}}\n\
         {{#if info.termsOfService}}\n\
@@ -22285,7 +22300,7 @@ local.templateUiMain = '\
 <pre class="code" id="swggAjaxProgressPre1">\n\
 /*\n\
  * initialize swgg-client\n\
- * 1. download currently-loaded apis as file swagger.json:\n\
+ * 1. download currently-loaded apis to file swagger.json:\n\
  *     $ curl -L "{{urlSwaggerJson htmlSafe}}" > swagger.json\n\
  * 2. npm install swgg\n\
  *     $ npm install swgg\n\
@@ -22327,7 +22342,7 @@ local.templateUiOperation = '\
         <span\n\
             class="flex1 td3 {{#if deprecated}}deprecated{{/if deprecated}}"\n\
         >{{_path}}</span>\n\
-        <span class="color777 flex1 td4">{{summary htmlSafe}}</span>\n\
+        <span class="color777 flex1 td4 textOverflowEllipsis">{{summary htmlSafe}}</span>\n\
     </div>\n\
     <form accept-charset="UTF-8"\n\
         class="content uiAnimateSlide"\n\
@@ -22373,10 +22388,14 @@ local.templateUiOperation = '\
 
 // https://github.com/swagger-api/swagger-ui/blob/v2.1.3/src/main/template/param.handlebars
 local.templateUiParam = '\
-<span class="td1 {{#if required}}fontWeightBold{{/if required}}">\n\
+<span class="td1">\n\
     {{name}}\n\
+    {{#if required}}\n\
+    &nbsp;<span class="fontWeightBold">(required)</span>\n\
+    {{/if required}}\n\
     {{#if description}}\n\
-    <br><span class="color777">{{description htmlSafe br}}</span>\n\
+    <br>\n\
+    <span class="color777">{{description htmlSafe br}}</span>\n\
     {{/if description}}\n\
 </span>\n\
 <span class="td2">{{type2}}{{#if format2}}<br>({{format2}}){{/if format2}}</span>\n\
@@ -22423,23 +22442,25 @@ local.templateUiResource = '\
     id="{{id}}"\n\
 >\n\
     <div class="cursorPointer fontWeightBold header tr">\n\
-        <span class="color777 flex1 onEventResourceDisplayAction td1"\n\
-            tabindex="0"\n\
-        >{{name}} :\n\
-        {{description htmlSafe br}}</span>\n\
         <span\n\
-            class="color777 onEventResourceDisplayAction td2"\n\
+            class="flex1 onEventResourceDisplayAction td1 textOverflowEllipsis"\n\
+            tabindex="0"\n\
+        >{{name}} : {{description htmlSafe}}</span>\n\
+        <span\n\
+            class="onEventResourceDisplayAction td2"\n\
             tabindex="0"\n\
         >Expand / Collapse Operations</span>\n\
         <span\n\
-            class="color777 onEventDatatableReload td3"\n\
+            class="onEventDatatableReload td3"\n\
             data-resource-name="{{name}}"\n\
             tabindex="0"\n\
         >Datatable</span>\n\
     </div>\n\
     <div class="operationList uiAnimateSlide"\n\
         style="border-bottom: 0; border-top: 0; margin-bottom: 0; margin-top: 0; max-height: 0; padding-bottom: 0; padding-top: 0;"\n\
-    ></div>\n\
+    >\n\
+        <div class="description">{{description htmlSafe br}}</div>\n\
+    </div>\n\
 </div>\n\
 ';
 
@@ -22633,7 +22654,7 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 \n\
 /* section */\n\
 .swggUiContainer > .header {\n\
-    background: #8c0;\n\
+    background: #7b0;\n\
     padding: 10px;\n\
 }\n\
 .swggUiContainer > .header > * {\n\
@@ -22666,10 +22687,10 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
     border: 0;\n\
     color: #fff;\n\
     padding: 6px 8px;\n\
-    background: #580;\n\
+    background: #370;\n\
 }\n\
 .swggUiContainer > .info a {\n\
-    color: #370;\n\
+    color: #373;\n\
 }\n\
 .swggUiContainer > .info > .fontWeightBold {\n\
     font-size: x-large;\n\
@@ -22695,7 +22716,7 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 }\n\
 .swggUiContainer .operation > .header:focus,\n\
 .swggUiContainer .operation > .header:hover {\n\
-    background: #bfb;\n\
+    background: #7d7;\n\
     outline: none;\n\
 }\n\
 .swggUiContainer .operation > .header > span {\n\
@@ -22703,7 +22724,8 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 }\n\
 .swggUiContainer .operation > .header > .td1 {\n\
     margin-left: 1rem;\n\
-    width: 1rem;\n\
+    text-align: center;\n\
+    width: 2rem;\n\
 }\n\
 .swggUiContainer .operation > .header > .td2 {\n\
     background: #777;\n\
@@ -22733,24 +22755,6 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer .operation .schemaP > .td4 {\n\
     flex: 3;\n\
 }\n\
-.swggUiContainer .resource > .header > span:focus,\n\
-.swggUiContainer .resource > .header > span:hover {\n\
-    color: black;\n\
-    outline: none;\n\
-}\n\
-.swggUiContainer .resource > .header > .td1 {\n\
-    font-size: large;\n\
-}\n\
-.swggUiContainer .resource > .header > .td2 {\n\
-    border-left: 1px solid;\n\
-    border-right: 1px solid;\n\
-    padding-left: 1rem;\n\
-    padding-right: 1rem;\n\
-}\n\
-\n\
-\n\
-\n\
-/* method */\n\
 .swggUiContainer .operation.DELETE > .header > .td2 {\n\
     background: #b00;\n\
 }\n\
@@ -22768,6 +22772,29 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 }\n\
 .swggUiContainer .operation.PUT > .header > .td2 {\n\
     background: #70b;\n\
+}\n\
+.swggUiContainer .resource > .header > span {\n\
+    color: #373;\n\
+}\n\
+.swggUiContainer .resource > .header > span:focus,\n\
+.swggUiContainer .resource > .header > span:hover {\n\
+    color: black;\n\
+    outline: none;\n\
+}\n\
+.swggUiContainer .resource > .header > .td1 {\n\
+    font-size: large;\n\
+}\n\
+.swggUiContainer .resource > .header > .td2 {\n\
+    border-left: 1px solid #777;\n\
+    border-right: 1px solid #777;\n\
+    padding-left: 1rem;\n\
+    padding-right: 1rem;\n\
+}\n\
+.swggUiContainer .resource > .operationList > .description {\n\
+    background: #ddd;\n\
+    border: 1px solid #777;\n\
+    color: #555;\n\
+    padding: 0.5rem;\n\
 }\n\
 </style>\n\
 ')
@@ -24113,7 +24140,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
 
         local.normalizeSwaggerJson = function (options) {
         /*
-         * this function will normalize swaggerJson and filter $SWGG_TAGS0_FILTER
+         * this function will normalize swaggerJson and filter $npm_package_swggTags0
          */
             var tmp;
             local.objectSetDefault(options, { paths: {}, tags: [] });
@@ -24131,25 +24158,28 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                     }
                 });
             });
-            // filter $SWGG_TAGS0_FILTER
-            // example usage:
-            // $ SWGG_TAGS0_FILTER=google-maps shBuildApp
-            // filter $SWGG_TAGS0_FILTER - definitions and parameters
+            if (!local.env.npm_package_swggTags0) {
+                return options;
+            }
+            // override options with x-swgg-tags0-override
+            local.objectSetOverride(options, options['x-swgg-tags0-override'] &&
+                options['x-swgg-tags0-override'][local.env.npm_package_swggTags0], 10);
+            // filter $npm_package_swggTags0 - definitions and parameters
             ['definitions', 'parameters'].forEach(function (schema) {
                 schema = options[schema] || {};
                 Object.keys(schema).forEach(function (key) {
-                    if (local.env.SWGG_TAGS0_FILTER && schema[key]['x-swgg-tags0'] &&
-                            schema[key]['x-swgg-tags0'] !== local.env.SWGG_TAGS0_FILTER) {
+                    if (schema[key]['x-swgg-tags0'] &&
+                            schema[key]['x-swgg-tags0'] !== local.env.npm_package_swggTags0) {
                         delete schema[key];
                     }
                 });
             });
-            // filter $SWGG_TAGS0_FILTER - paths
+            // filter $npm_package_swggTags0 - paths
             Object.keys(options.paths).forEach(function (path) {
                 Object.keys(options.paths[path]).forEach(function (method) {
                     tmp = options.paths[path][method];
-                    if (local.env.SWGG_TAGS0_FILTER && tmp['x-swgg-tags0'] &&
-                            tmp['x-swgg-tags0'] !== local.env.SWGG_TAGS0_FILTER) {
+                    if (tmp['x-swgg-tags0'] &&
+                            tmp['x-swgg-tags0'] !== local.env.npm_package_swggTags0) {
                         delete options.paths[path][method];
                         return;
                     }
@@ -24158,10 +24188,10 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                     delete options.paths[path];
                 }
             });
-            // filter $SWGG_TAGS0_FILTER - tags
+            // filter $npm_package_swggTags0 - tags
             options.tags = options.tags.filter(function (tag) {
-                return !local.env.SWGG_TAGS0_FILTER ||
-                    (tag['x-swgg-tags0'] && tag['x-swgg-tags0'] === local.env.SWGG_TAGS0_FILTER);
+                return tag['x-swgg-tags0'] &&
+                    tag['x-swgg-tags0'] === local.env.npm_package_swggTags0;
             });
             return options;
         };
@@ -24873,7 +24903,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                     // init resource
                     resource = options.resourceDict[tag] = local.objectSetDefault(
                         options.resourceDict[tag] || options.tagDict[tag],
-                        { description: 'no description', name: tag, operationListInnerHtml: '' }
+                        { description: 'no description', name: tag }
                     );
                     resource.id = resource.id || local.idDomElementCreate('swgg_id_' + tag);
                 });
@@ -24906,7 +24936,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
                         responseList: Object.keys(operation.responses).sort().map(function (key) {
                             return { key: key, value: operation.responses[key] };
                         }),
-                        summary: 'no summary'
+                        summary: operation.description || 'no summary'
                     });
                     operation.parameters.forEach(function (schemaP) {
                         // init schemaP.id
@@ -24921,7 +24951,7 @@ document.querySelector(".swggUiContainer > .header > .td2").value =\n\
             Array.from(
                 options.uiFragment.querySelectorAll('.operation > .header > .td1')
             ).forEach(function (element, ii) {
-                element.innerHTML = ii + 1;
+                element.innerHTML = ii + 1 + '.';
             });
             // append uiFragment to swggUiContainer
             document.querySelector('#swggAjaxProgressDiv1').style.display = 'none';
