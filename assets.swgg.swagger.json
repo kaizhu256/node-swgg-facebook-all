@@ -183,7 +183,7 @@
                         "$ref": "#/parameters/facebook-graph.version.required"
                     },
                     {
-                        "$ref": "#/parameters/facebook-graph.user-id.required"
+                        "$ref": "#/parameters/facebook-graph.test-user-id.required"
                     },
                     {
                         "description": "New name for the test user.",
@@ -196,6 +196,41 @@
                         "in": "formData",
                         "name": "password",
                         "type": "string"
+                    }
+                ],
+                "responses": {
+                    "default": {
+                        "description": "default response"
+                    }
+                },
+                "tags": [
+                    "facebook-graph"
+                ],
+                "x-swgg-host": "graph.facebook.com",
+                "x-swgg-operationIdFromPath": true,
+                "x-swgg-tags0": "facebook-graph"
+            }
+        },
+        "/{version}/{test-user-id}/friends/{test-user-id2}": {
+            "post": {
+                "description": "The friends of a test user. This is identical to the /{user-id}/friends edge aside from the publishing operation explained below.\n\nRelated Guides\nhttps://developers.facebook.com/docs/apps/test-users#managetool\n\nPublishing\nBy publishing using this edge, you send friend requests between test users, and confirm those friend requests:\nPOST /v2.11/{test-user-1}/friends/{test-user-2} HTTP/1.1\nHost: graph.facebook.com\nThis call will send a friend request to test-user-2 from test-user-1. The following call would confirm that same friend request:\nPOST /v2.11/{test-user-2}/friends/{test-user-1} HTTP/1.1\nHost: graph.facebook.com\n\nPermissions\nThe user access token a test user is required to send any friend requests from them, or to confirm any friend requests send to them.\nOnly the recipient of a friend request can confirm that request.\nThis call will only work with Test users associated with a Facebook app.",
+                "operationId": "_2F_7Bversion_7D_2F_7Btest-user-id_7D_2Ffriends_2F_7Btest-user-id2_7D_20POST",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/facebook-graph.access_token.app.required"
+                    },
+                    {
+                        "$ref": "#/parameters/facebook-graph.version.required"
+                    },
+                    {
+                        "$ref": "#/parameters/facebook-graph.test-user-id.required"
+                    },
+                    {
+                        "in": "path",
+                        "name": "test-user-id2",
+                        "required": true,
+                        "type": "string",
+                        "x-swgg-$ref": "#/parameters/facebook-graph.test-user-id.required"
                     }
                 ],
                 "responses": {

@@ -56,16 +56,12 @@ this zero-dependency package will provide a javascript-client for facebook's web
 [![apidoc](https://kaizhu256.github.io/node-swgg-facebook/build/screenshot.buildCi.browser.%252Ftmp%252Fbuild%252Fapidoc.html.png)](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/apidoc.html)
 
 #### todo
+- npm publish 2017.11.6
 - continue adding extra facebook web-api's
 - none
 
 #### changelog for v2017.11.6
-- npm publish 2017.11.6
-- revert from 2-space-indent to 4-space-indent
-- add api DELETE /{facebook_graph_version}/{test-user-id}#requireTestUserId
-- add api POST /{facebook_graph_version}/{test-user-id}#requireTestUserId
-- add api POST /{facebook_graph_version}/{achievement-id}#requireAchievementId
-- add api GET /{facebook_graph_version}/{user-id}/achievements
+- add api POST /{version}/{test-user-id}/friends/{test-user-id2}
 - none
 
 #### this package requires
