@@ -42,8 +42,6 @@ this zero-dependency package will provide a javascript-client for facebook's web
 
 
 # cdn download
-- [https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.swgg_facebook.js](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.swgg_facebook.js)
-
 - [https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.swgg.swagger.json](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.swgg.swagger.json)
 
 
@@ -86,7 +84,7 @@ this zero-dependency package will provide a javascript-client for facebook's web
 # 1. download standalone app
 curl -O https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.app.js
 # 2. run standalone app
-node ./assets.app.js
+PORT=8081 node ./assets.app.js
 # 3. open a browser to http://127.0.0.1:8081 and play with the web-demo
 # 4. edit file assets.app.js to suit your needs
 ```
