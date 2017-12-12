@@ -321,6 +321,7 @@ instruction
     "engines": {
         "node": ">=4.0"
     },
+    "githubRepoAlias": "swgg-io/node-swgg-facebook",
     "homepage": "https://github.com/kaizhu256/node-swgg-facebook",
     "keywords": [
         "facebook-graph"
