@@ -2,7 +2,7 @@
 this zero-dependency package will provide a javascript-client for facebook's web-apis, with a working web-demo
 
 # live web demo
-- [https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app)
+- [https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app)
 
 [![screenshot](https://kaizhu256.github.io/node-swgg-facebook/build/screenshot.deployGithub.browser.%252Fnode-swgg-facebook%252Fbuild%252Fapp.png)](https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app)
 

@@ -17713,6 +17713,14 @@ return Utf8ArrayToStr(bff);
                     });
                 });
             }
+            // customize local
+            if (local.fs.existsSync('./assets.utility2.rollup.js')) {
+                options.dataTo = options.dataTo.replace(
+                    'module.exports = local;',
+                    "module.exports = local.global.utility2_rollup || " +
+                        "require('./assets.utility2.rollup.js');"
+                );
+            }
             options.customize();
             // save lib.xxx.js
             local.fs.writeFileSync(
@@ -22195,7 +22203,7 @@ local.templateApiDict =
                 "type": "string"
             },
             {
-                "default": ['_timeUpdated', 'id'],
+                "default": null,
                 "description": "projection-fields param",
                 "format": "json",
                 "in": "query",
@@ -25657,6 +25665,8 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             // init valueText
             schemaP.valueText = schemaP['x-swgg-apiKey']
                 ? local.apiKeyValue
+                : schemaP.default === null
+                ? ''
                 : schemaP.required || schemaP.isTextarea
                 ? schemaP.placeholder
                 : '';

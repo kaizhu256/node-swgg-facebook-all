@@ -51,11 +51,9 @@
                     local[key] = require(key);
                 }
             });
-            module.exports = local;
+            module.exports = local.global.utility2_rollup || require('./assets.utility2.rollup.js');
             module.exports.__dirname = __dirname;
             module.exports.module = module;
-            module.exports = local.global.utility2_rollup ||
-                require('./assets.utility2.rollup.js');
         }
     }());
 }());
