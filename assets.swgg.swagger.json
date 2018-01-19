@@ -5,11 +5,11 @@
         "url": "https://developers.facebook.com/docs/"
     },
     "info": {
-        "description": "this zero-dependency package will provide a javascript-client for facebook's web-apis, with a working web-demo",
-        "title": "swgg-facebook",
-        "version": "2017.11.6",
-        "x-swgg-downloadStandaloneApp": "https://kaizhu256.github.io/node-swgg-facebook/build..beta..travis-ci.org/app/assets.app.js",
-        "x-swgg-homepage": "https://github.com/kaizhu256/node-swgg-facebook"
+        "description": "this zero-dependency package will provide a swagger-client for facebook-all's web-apis, with a working web-demo",
+        "title": "swgg-facebook-all",
+        "version": "2018.1.18",
+        "x-swgg-downloadStandaloneApp": "https://kaizhu256.github.io/node-swgg-facebook-all/build..beta..travis-ci.org/app/assets.app.js",
+        "x-swgg-homepage": "https://github.com/kaizhu256/node-swgg-facebook-all"
     },
     "parameters": {
         "facebook-graph.access_token.app.required": {

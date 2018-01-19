@@ -1,4 +1,4 @@
-/* istanbul instrument in package swgg_facebook */
+/* istanbul instrument in package swgg_facebook_all */
 /*jslint
     bitwise: true,
     browser: true,
@@ -40,10 +40,10 @@
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
         // init lib
-        local.local = local.swgg_facebook = local;
+        local.local = local.swgg_facebook_all = local;
         // init exports
         if (local.modeJs === 'browser') {
-            local.global.utility2_swgg_facebook = local;
+            local.global.utility2_swgg_facebook_all = local;
         } else {
             // require builtins
             Object.keys(process.binding('natives')).forEach(function (key) {

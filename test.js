@@ -1,4 +1,4 @@
-/* istanbul instrument in package swgg_facebook */
+/* istanbul instrument in package swgg_facebook_all */
 /*jslint
     bitwise: true,
     browser: true,

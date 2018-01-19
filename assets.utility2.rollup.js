@@ -17714,8 +17714,7 @@ return Utf8ArrayToStr(bff);
                 });
             }
             // customize local
-            if (local.fs.existsSync('./assets.utility2.rollup.js') &&
-                    local.env.npm_package_nameLib !== 'swgg') {
+            if (local.fs.existsSync('./assets.utility2.rollup.js')) {
                 options.dataTo = options.dataTo.replace(
                     'module.exports = local;',
                     "module.exports = local.global.utility2_rollup || " +
@@ -23354,7 +23353,6 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             options.error = local.validateBySwaggerParameters({
                 // normalize paramDict
                 data: local.normalizeSwaggerParamDict({
-                    modeNoDefault: options.modeNoDefault,
                     operation: self,
                     paramDict: local.jsonCopy(options.paramDict)
                 }).paramDict,

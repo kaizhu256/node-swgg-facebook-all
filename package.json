@@ -1,6 +1,6 @@
 {
     "author": "kai zhu <kaizhu256@gmail.com>",
-    "description": "this zero-dependency package will provide a javascript-client for facebook's web-apis, with a working web-demo",
+    "description": "this zero-dependency package will provide a swagger-client for facebook-all's web-apis, with a working web-demo",
     "devDependencies": {
         "electron-lite": "kaizhu256/node-electron-lite#alpha",
         "utility2": "kaizhu256/node-utility2#alpha"
@@ -8,24 +8,25 @@
     "engines": {
         "node": ">=4.0"
     },
-    "githubRepoAlias": "swgg-io/node-swgg-facebook",
-    "homepage": "https://github.com/kaizhu256/node-swgg-facebook",
+    "githubRepoAlias": "swgg-io/node-swgg-facebook-all",
+    "homepage": "https://github.com/kaizhu256/node-swgg-facebook-all",
     "keywords": [
-        "facebook-graph"
+        "facebook-all",
+        "swagger-client"
     ],
     "license": "MIT",
-    "main": "lib.swgg_facebook.js",
-    "name": "swgg-facebook",
-    "nameAliasPublish": "api-facebook",
-    "nameLib": "swgg_facebook",
-    "nameOriginal": "swgg-facebook",
+    "main": "lib.swgg_facebook_all.js",
+    "name": "swgg-facebook-all",
+    "nameAliasPublish": "api-facebook swgg-facebook",
+    "nameLib": "swgg_facebook_all",
+    "nameOriginal": "swgg-facebook-all",
     "os": [
         "darwin",
         "linux"
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/kaizhu256/node-swgg-facebook.git"
+        "url": "https://github.com/kaizhu256/node-swgg-facebook-all.git"
     },
     "scripts": {
         "build-ci": "utility2 shReadmeTest build_ci.sh",
@@ -35,5 +36,5 @@
         "start": "PORT=${PORT:-8080} utility2 start test.js",
         "test": "PORT=$(utility2 shServerPortRandom) utility2 test test.js"
     },
-    "version": "2017.11.6"
+    "version": "2018.1.18"
 }
