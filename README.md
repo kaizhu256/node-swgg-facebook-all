@@ -63,6 +63,7 @@ this zero-dependency package will provide a swagger-client for facebook-all's we
 #### changelog for v2018.1.18
 - auto-sync master swagger.json from ../swgg-$npm_package_swggAll/assets.swgg.swagger.json
 - fix failed semanticRequired validation-error in ui
+- ignore env var \$npm_package_swggAll and \$npm_package_swggTags0 if package-name has -all sufix
 - rename package-name swgg-facebook -> swgg-facebook-all
 - remove unused datatable link
 - none
@@ -352,6 +353,8 @@ instruction
         "start": "PORT=${PORT:-8080} utility2 start test.js",
         "test": "PORT=$(utility2 shServerPortRandom) utility2 test test.js"
     },
+    "swggAll": "facebook-all",
+    "swggTags0": "facebook-all",
     "version": "2018.1.18"
 }
 ```

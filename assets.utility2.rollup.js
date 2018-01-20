@@ -18965,8 +18965,7 @@ return Utf8ArrayToStr(bff);
          */
             var onError, options, timerTimeout;
             // handle preflight-cors
-            if (request.method === 'OPTIONS' &&
-                    (/forward-proxy-url/)
+            if (request.method === 'OPTIONS' && (/forward-proxy-url/)
                     .test(request.headers['access-control-request-headers'])) {
                 local.serverRespondCors(request, response);
                 response.end();
@@ -20181,16 +20180,23 @@ instruction\n\
             return local.sjclHashScryptCreate(password, hash) === hash;
         };
 
+        local.sjclHashSha1Create = function (data) {
+        /*
+         * this function will create a base64-encoded sha1 hash of the string data
+         */
+            return local.sjcl.codec.base64.fromBits(local.sjcl.hash.sha1.hash(data));
+        };
+
         local.sjclHashSha256Create = function (data) {
         /*
-         * this function will create a base64-encoded sha-256 hash of the string data
+         * this function will create a base64-encoded sha256 hash of the string data
          */
             return local.sjcl.codec.base64.fromBits(local.sjcl.hash.sha256.hash(data));
         };
 
         local.sjclHmacSha1Create = function (key, data) {
         /*
-         * this function will create a base64-encoded sha-1 hmac
+         * this function will create a base64-encoded sha1 hmac
          * from the string key and string data
          */
             return local.sjcl.codec.base64.fromBits(
@@ -20203,7 +20209,7 @@ instruction\n\
 
         local.sjclHmacSha256Create = function (key, data) {
         /*
-         * this function will create a base64-encoded sha-256 hmac
+         * this function will create a base64-encoded sha256 hmac
          * from the string key and string data
          */
             return local.sjcl.codec.base64.fromBits(
@@ -23856,6 +23862,11 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             if (schemaP.readOnly) {
                 return;
             }
+            // init default-value
+            if (options.modeNotRandom && !local.isNullOrUndefined(schemaP.default)) {
+                return local.jsonCopy(schemaP.default);
+            }
+            // init enum-value
             if (schemaP.enum) {
                 value = options.modeNotRandom
                     ? schemaP.enum[0]
@@ -24723,7 +24734,8 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     }
                 });
             });
-            if (!local.env.npm_package_swggTags0) {
+            if (!local.env.npm_package_swggTags0 ||
+                    (/-all$/).test(local.env.npm_package_swggTags0)) {
                 return options;
             }
             // override options with x-swgg-tags0-override
@@ -25200,12 +25212,14 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     options.targetOperation.querySelector('.responseStatusCode').focus();
                     break;
                 default:
+                    if (error) {
+                        console.error(error);
+                    }
                     if (options.error) {
                         return;
                     }
                     data = local.objectSetDefault(data, {
                         contentType: 'undefined',
-                        responseText: error && error.stack,
                         statusCode: 'undefined'
                     });
                     // init responseStatusCode
@@ -25631,6 +25645,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 schemaP.schema2 = (local.validateBySwaggerSchema({
                     // dereference schemaP
                     modeDereference: true,
+                    modeDereferenceDepth: 2,
                     prefix: ['parameters', schemaP.name],
                     schema: element,
                     swaggerJson: local.swaggerJson
@@ -25883,6 +25898,19 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 });
             }
             if (options.modeDereference) {
+                if (options.modeDereferenceDepth > 1) {
+                    schema = local.jsonCopy(schema);
+                    Object.keys(schema.properties || {}).forEach(function (key) {
+                        schema.properties[key] = local.validateBySwaggerSchema({
+                            // dereference property
+                            modeDereference: true,
+                            modeDereferenceDepth: options.modeDereferenceDepth - 1,
+                            prefix: options.prefix.concat(['properties', key]),
+                            schema: schema.properties[key],
+                            swaggerJson: options.swaggerJson
+                        });
+                    });
+                }
                 return schema;
             }
             // validate schema.default
