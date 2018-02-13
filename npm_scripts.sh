@@ -44,6 +44,7 @@ shNpmScriptApidocRawFetch() {(set -e
     cd tmp/apidoc.raw
     rm -fr developers.facebook.com
     wget \
+        --default-page=index.html \
         -U "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
 Chrome/64.0.1234.123 Safari/537.36" \
         -l 2 -nc -np -nv -r -t 10 \
