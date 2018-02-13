@@ -15,18 +15,10 @@ shNpmScriptApidocRawFetch() {(set -e
     mkdir -p tmp
     cd tmp
     rm -fr developer.facebook.com
-    #!! mkdir -p developer.facebook.com/v3/guides
-    #!! mkdir -p developer.facebook.com/v3/libraries
-    #!! mkdir -p developer.facebook.com/v3/users/emails
-    #!! mkdir -p developer.facebook.com/v3/users/followers
-    #!! mkdir -p developer.facebook.com/v3/users/keys
-    #!! mkdir -p developer.facebook.com/v3/users/gpg_keys
-    #!! mkdir -p developer.facebook.com/v3/users/administration
-    #!! mkdir -p developer.facebook.com/v3/users/blocking
     wget \
         -U "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.1234.123 Safari/537.36" \
-        -l 2 -m -np -nv \
-        https://developers.facebook.com/docs/graph-api/reference/
+        -l 2 -np -nv -r \
+        https://developers.facebook.com/docs/graph-api/reference/index.html
 )}
 
 shNpmScriptPostinstall() {
