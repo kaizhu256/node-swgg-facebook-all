@@ -46,8 +46,9 @@ shNpmScriptApidocRawFetch() {(set -e
     wget \
         -U "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
 Chrome/64.0.1234.123 Safari/537.36" \
-        -l 2 -np -nv -r \
-        https://developers.facebook.com/docs/graph-api/reference/
+        -l 2 -np -nv -r -t 10 \
+        https://developers.facebook.com/docs/graph-api/reference/ 2>&1 | \
+    tee wget.log
 )}
 
 shNpmScriptPostinstall() {
