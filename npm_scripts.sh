@@ -2,12 +2,39 @@
 
 shNpmScriptApidocRawCreate() {(set -e
 # this function will create the raw apidoc
-    find tmp/apidoc.raw/developer.facebook.com/v3 -name index.html | \
-        sed -e 's|/index.html||' | \
-        sort | sed -e 's|$|/index.html|' | \
-        xargs -I @ -n 1 sh -c 'printf "\\n@\\n" && cat @' | \
-        sed -e 's| *$||' > \
-        .apidoc.raw.html
+    cd tmp/apidoc.raw
+    find developers.facebook.com -type f | \
+        grep -ve "index.html\>" | \
+        xargs -n 1 rm
+    find developers.facebook.com -type f | \
+        grep -e "?" | \
+        xargs -n 1 rm
+    find developers.facebook.com -type f | \
+        xargs -n 1 node -e "
+// <script>
+/*jslint
+    bitwise: true,
+    browser: true,
+    maxerr: 8,
+    maxlen: 100,
+    node: true,
+    nomen: true,
+    regexp: true,
+    stupid: true
+*/
+'use strict';
+if (!(/\/index.html$/).test(process.argv[1])) {
+    require('fs').unlinkSync(process.argv[1]);
+} else {
+    require('fs').writeFileSync(
+        process.argv[1],
+        require('fs').readFileSync(process.argv[1], 'utf8')
+            .replace((/(<\/\w+>)/g), '$1\n')
+            .replace((/(<\/\w+>)\n{2,}/g), '$1\n')
+    );
+}
+// </script>
+        "
 )}
 
 shNpmScriptApidocRawFetch() {(set -e
@@ -20,14 +47,6 @@ shNpmScriptApidocRawFetch() {(set -e
 Chrome/64.0.1234.123 Safari/537.36" \
         -l 2 -np -nv -r \
         https://developers.facebook.com/docs/graph-api/reference/
-    #!! find developers.facebook.com/docs/graph-api/reference -type f | \
-    #!! sed -e '|\(<\/\w*>\)||'
-
-    #!! grep '\.1\|index.html'
-    find . -name *.1 | \
-    grep -v '.1/' | \
-    sed -e 's|\(.*\)\.1|cp \1.1 \1/index.html|' | \
-    xargs -n 1 sh -c
 )}
 
 shNpmScriptPostinstall() {
