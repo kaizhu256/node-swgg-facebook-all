@@ -1,13 +1,14 @@
 {
     "basePath": "/",
     "externalDocs": {
-        "description": "find out more about facebook's web-apis",
+        "description": "find out more about facebook-all's web-apis",
         "url": "https://developers.facebook.com/docs/"
     },
     "info": {
         "description": "this zero-dependency package will provide a swagger-client for facebook-all's web-apis, with a working web-demo",
         "title": "swgg-facebook-all",
         "version": "2018.1.18",
+        "x-swgg-description": "this zero-dependency package will provide a swagger-client for facebook-all's web-apis, with a working web-demo",
         "x-swgg-downloadStandaloneApp": "https://kaizhu256.github.io/node-swgg-facebook-all/build..beta..travis-ci.org/app/assets.app.js",
         "x-swgg-homepage": "https://github.com/kaizhu256/node-swgg-facebook-all"
     },
@@ -460,5 +461,6 @@
             "name": "facebook-login",
             "x-swgg-tags0": "all"
         }
-    ]
+    ],
+    "x-swgg-downloadStandaloneApp": "https://kaizhu256.github.io/node-swgg-facebook-all/build..beta..travis-ci.org/app/assets.app.js"
 }

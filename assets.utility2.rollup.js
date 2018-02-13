@@ -85,8 +85,13 @@
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.apidoc = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_apidoc = local;
@@ -99,8 +104,9 @@
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.apidoc = local;
     }());
 
 
@@ -108,7 +114,7 @@
     // run shared js-env code - function-before
     /* istanbul ignore next */
     (function () {
-        local.assert = function (passed, message) {
+        local.assert = function (passed, message, onError) {
         /*
          * this function will throw the error message if passed is falsey
          */
@@ -124,7 +130,12 @@
                     ? message
                     // else JSON.stringify message
                     : JSON.stringify(message));
-            throw error;
+            // debug error
+            local._debugAssertError = error;
+            onError = onError || function (error) {
+                throw error;
+            };
+            onError(error);
         };
 
         local.cliRun = function (fnc) {
@@ -232,7 +243,7 @@
         /*
          * this function will search modulePathList for the module's __dirname
          */
-            var result, tmp;
+            var result;
             // search process.cwd()
             if (!module || module === '.' || module.indexOf('/') >= 0) {
                 return require('path').resolve(process.cwd(), module || '');
@@ -244,11 +255,13 @@
                 .concat([process.env.HOME + '/node_modules', '/usr/local/lib/node_modules'])
                 .some(function (modulePath) {
                     try {
-                        tmp = require('path').resolve(process.cwd(), modulePath + '/' + module);
-                        result = require('fs').statSync(tmp).isDirectory() && tmp;
+                        result = require('path').resolve(process.cwd(), modulePath + '/' + module);
+                        result = require('fs').statSync(result).isDirectory() && result;
                         return result;
-                    } catch (ignore) {
+                    } catch (errorCaught) {
+                        result = null;
                     }
+                    return result;
                 });
             return result || '';
         };
@@ -317,12 +330,15 @@
         /*
          * this function will render the template with the given dict
          */
-            var argList, getValue, match, renderPartial, rgx, tryCatch, value;
+            var argList, getValue, match, renderPartial, rgx, tryCatch, skip, value;
             dict = dict || {};
             options = options || {};
             getValue = function (key) {
                 argList = key.split(' ');
                 value = dict;
+                if (argList[0] === '#this/') {
+                    return;
+                }
                 // iteratively lookup nested values in the dict
                 argList[0].split('.').forEach(function (key) {
                     value = value && value[key];
@@ -332,13 +348,19 @@
             renderPartial = function (match0, helper, key, partial) {
                 switch (helper) {
                 case 'each':
+                case 'eachTrimRightComma':
                     value = getValue(key);
-                    return Array.isArray(value)
+                    value = Array.isArray(value)
                         ? value.map(function (dict) {
                             // recurse with partial
                             return local.templateRender(partial, dict, options);
                         }).join('')
                         : '';
+                    // remove trailing-comma from last element
+                    if (helper === 'eachTrimRightComma') {
+                        value = value.trimRight().replace((/,$/), '');
+                    }
+                    return value;
                 case 'if':
                     partial = partial.split('{{#unless ' + key + '}}');
                     partial = getValue(key)
@@ -382,14 +404,14 @@
             }
             // search for keys in the template
             return template.replace((/\{\{[^}]+?\}\}/g), function (match0) {
-                var htmlBr, notHtmlSafe;
+                var markdownToHtml, notHtmlSafe;
                 notHtmlSafe = options.notHtmlSafe;
                 return tryCatch(function () {
                     getValue(match0.slice(2, -2));
                     if (value === undefined) {
                         return match0;
                     }
-                    argList.slice(1).forEach(function (arg) {
+                    argList.slice(1).forEach(function (arg, ii, list) {
                         switch (arg) {
                         case 'alphanumeric':
                             value = value.replace((/\W/g), '_');
@@ -400,9 +422,6 @@
                         case 'encodeURIComponent':
                             value = encodeURIComponent(value);
                             break;
-                        case 'htmlBr':
-                            htmlBr = true;
-                            break;
                         case 'jsonStringify':
                             value = JSON.stringify(value);
                             break;
@@ -412,11 +431,23 @@
                         case 'markdownSafe':
                             value = value.replace((/`/g), '\'');
                             break;
+                        case 'markdownToHtml':
+                            markdownToHtml = true;
+                            break;
                         case 'notHtmlSafe':
                             notHtmlSafe = true;
                             break;
+                        case 'truncate':
+                            skip = ii + 1;
+                            if (value.length > list[skip]) {
+                                value = value.slice(0, list[skip] - 3).trimRight() + '...';
+                            }
+                            break;
                         // default to String.prototype[arg]()
                         default:
+                            if (ii === skip) {
+                                break;
+                            }
                             value = value[arg]();
                             break;
                         }
@@ -428,8 +459,8 @@
                             return '&#x' + match0.charCodeAt(0).toString(16) + ';';
                         });
                     }
-                    if (htmlBr) {
-                        value = value.replace((/\n/g), '<br>');
+                    if (markdownToHtml && typeof local.marked === 'function') {
+                        value = local.marked(value);
                     }
                     return value;
                 }, 'templateRender could not render expression ' + JSON.stringify(match0) + '\n');
@@ -492,6 +523,7 @@ local.templateApidocHtml = '\
     background: #eef;\n\
     border: 1px solid;\n\
     color: #777;\n\
+    overflow-wrap: break-word;\n\
     padding: 5px;\n\
     white-space: pre-wrap;\n\
 }\n\
@@ -552,7 +584,7 @@ local.templateApidocHtml = '\
         </a>\n\
     </h2>\n\
     <ul>\n\
-    <li>description and source-code<pre class="apidocCodePre">{{source}}</pre></li>\n\
+    <li>description and source-code<pre class="apidocCodePre">{{source truncate 4096}}</pre></li>\n\
     <li>example usage<pre class="apidocCodePre">{{example}}</pre></li>\n\
     </ul>\n\
     {{/if source}}\n\
@@ -602,11 +634,7 @@ local.templateApidocHtml = '\
                     return element;
                 }
                 // init source
-                element.source = trimLeft(toString(module[key])) || 'n/a';
-                if (element.source.length > 4096) {
-                    element.source = element.source.slice(0, 4096).trimRight() + ' ...';
-                }
-                element.source = local.stringHtmlSafe(element.source)
+                element.source = local.stringHtmlSafe(trimLeft(toString(module[key])) || 'n/a')
                     .replace((/\([\S\s]*?\)/), function (match0) {
                         // init signature
                         element.signature = match0
@@ -649,6 +677,7 @@ local.templateApidocHtml = '\
                     console.error('apidocCreate - readExample ' + file);
                     result = '';
                     result = ('\n\n\n\n\n\n\n\n' +
+                        // bug-workaround - truncate example to manageable size
                         local.fs.readFileSync(file, 'utf8').slice(0, 262144) +
                         '\n\n\n\n\n\n\n\n').replace((/\r\n*/g), '\n');
                 }, console.error);
@@ -729,13 +758,13 @@ local.templateApidocHtml = '\
                 moduleDict: {},
                 moduleExtraDict: {},
                 packageJson: { bin: {} },
-                template: local.templateApidocHtml
+                template: local.templateApidocHtml,
+                whitelistDict: {}
             }, 2);
             // init exampleList
             [1, 2, 3, 4].forEach(function (depth) {
                 options.exampleList = options.exampleList.concat(
-                    // http://stackoverflow.com
-                    // /questions/4509624/how-to-limit-depth-for-recursive-file-list
+                    // http://stackoverflow.com/questions/4509624/how-to-limit-depth-for-recursive-file-list
                     // find . -maxdepth 1 -mindepth 1 -name "*.js" -type f
                     local.child_process.execSync('find "' + options.dir +
                         '" -maxdepth ' + depth + ' -mindepth ' + depth +
@@ -839,8 +868,7 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                 options.moduleExtraDict[options.env.npm_package_name] || {};
             [1, 2, 3, 4].forEach(function (depth) {
                 options.libFileList = options.libFileList.concat(
-                    // http://stackoverflow.com
-                    // /questions/4509624/how-to-limit-depth-for-recursive-file-list
+                    // http://stackoverflow.com/questions/4509624/how-to-limit-depth-for-recursive-file-list
                     // find . -maxdepth 1 -mindepth 1 -name "*.js" -type f
                     local.child_process.execSync('find "' + options.dir +
                         '" -maxdepth ' + depth + ' -mindepth ' + depth +
@@ -927,7 +955,8 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                                     return key &&
                                         (/^\w[\w\-.]*?$/).test(key) &&
                                         key.indexOf('testCase_') !== 0 &&
-                                        module[key] !== options.blacklistDict[key];
+                                        (module[key] !== options.blacklistDict[key]
+                                            || options.whitelistDict[key]);
                                 }, console.error);
                             })
                             .map(function (key) {
@@ -1114,8 +1143,13 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.db = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_db = local;
@@ -1128,8 +1162,9 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.db = local;
     }());
 
 
@@ -1137,7 +1172,7 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
     // run shared js-env code - function-before
     /* istanbul ignore next */
     (function () {
-        local.assert = function (passed, message) {
+        local.assert = function (passed, message, onError) {
         /*
          * this function will throw the error message if passed is falsey
          */
@@ -1153,7 +1188,12 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                     ? message
                     // else JSON.stringify message
                     : JSON.stringify(message));
-            throw error;
+            // debug error
+            local._debugAssertError = error;
+            onError = onError || function (error) {
+                throw error;
+            };
+            onError(error);
         };
 
         local.cliRun = function (fnc) {
@@ -1315,6 +1355,13 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                 return JSON.stringify(jsonObj);
             };
             circularList = [];
+            // try to derefernce all properties in jsonObj
+            (function () {
+                try {
+                    jsonObj = JSON.parse(JSON.stringify(jsonObj));
+                } catch (ignore) {
+                }
+            }());
             return JSON.stringify(typeof jsonObj === 'object' && jsonObj
                 // recurse
                 ? JSON.parse(stringify(jsonObj))
@@ -3125,8 +3172,13 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.github_crud = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_github_crud = local;
@@ -3139,8 +3191,9 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.github_crud = local;
     }());
 
 
@@ -3148,7 +3201,7 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
     /* istanbul ignore next */
     // run shared js-env code - function-before
     (function () {
-        local.assert = function (passed, message) {
+        local.assert = function (passed, message, onError) {
         /*
          * this function will throw the error message if passed is falsey
          */
@@ -3164,7 +3217,12 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                     ? message
                     // else JSON.stringify message
                     : JSON.stringify(message));
-            throw error;
+            // debug error
+            local._debugAssertError = error;
+            onError = onError || function (error) {
+                throw error;
+            };
+            onError(error);
         };
 
         local.cliRun = function (fnc) {
@@ -3900,8 +3958,13 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.istanbul = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_istanbul = local;
@@ -3914,8 +3977,11 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
-            // init custom
+        }
+        // init lib
+        local.local = local.istanbul = local;
+        // init custom
+        if (local.modeJs === 'node') {
             local._istanbul_module = require('module');
             local.process = process;
             local.require = require;
@@ -6625,8 +6691,13 @@ local.templateCoverageBadgeSvg =
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.jslint = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_jslint = local;
@@ -6639,8 +6710,9 @@ local.templateCoverageBadgeSvg =
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.jslint = local;
     }());
 
 
@@ -13045,22 +13117,8 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
             lineno = 0;
             // parse script
             scriptParsed = script
-                // indent text-block
-                // /* jslint-indent-begin */ ... /* jslint-indent-end */
-                .replace(
-/* jslint-indent-begin 20 */
-(function () {
-    /*jslint maxlen: 256*/
-    return (/^ *?\/\* jslint-indent-begin (\d+?) \*\/$[\S\s]+?^ *?\/\* jslint-indent-end \*\/$/gm);
-}()),
-/* jslint-indent-end */
-                    function (match0, match1) {
-                        return match0.replace(
-                            (/(^ *\S)/gm),
-                            new Array(Number(match1) + 1).join(' ') + '$1'
-                        );
-                    }
-                )
+                // ignore url-comment
+                .replace((/^ *?(?:\* |\/\/ )https?:\/\/.*?$/gm), '')
                 // ignore text-block
                 // /* jslint-ignore-begin */ ... /* jslint-ignore-end */
                 .replace(
@@ -13090,7 +13148,7 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
                 if (!local.CSSLint.errors.length) {
                     return script;
                 }
-                local.errorText = '\n\u001b[1m' + file + '\u001b[22m\n';
+                local.errorText = '\u001b[1m' + file + '\u001b[22m\n';
                 local.CSSLint.errors
                     .filter(function (error) {
                         return error;
@@ -13116,7 +13174,7 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
                     return script;
                 }
                 // if error occurred, then print colorized error messages
-                local.errorText = '\n\u001b[1m' + file + '\u001b[22m\n';
+                local.errorText = '\u001b[1m' + file + '\u001b[22m\n';
                 local.jslintEs6.errors
                     .filter(function (error) {
                         return error;
@@ -13139,7 +13197,7 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
                     return script;
                 }
                 // if error occurred, then print colorized error messages
-                local.errorText = '\n\u001b[1m' + file + '\u001b[22m\n';
+                local.errorText = '\u001b[1m' + file + '\u001b[22m\n';
                 local.JSLINT.errors
                     .filter(function (error) {
                         return error;
@@ -13155,6 +13213,7 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
                             ', Pos ' + error.character + '\u001b[39m\n';
                     });
             }
+            local.errorText = local.errorText.trim();
             // print error to stderr
             console.error(local.errorText);
             return script;
@@ -13194,6 +13253,259 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
     }
 }());
 /* script-end /assets.utility2.lib.jslint.js */
+
+
+
+/* script-begin /assets.utility2.lib.marked.js */
+/*jslint
+    bitwise: true,
+    browser: true,
+    maxerr: 8,
+    maxlen: 100,
+    node: true,
+    nomen: true,
+    regexp: true,
+    stupid: true
+*/
+(function () {
+    'use strict';
+    var local;
+
+
+
+    // run shared js-env code - init-before
+    (function () {
+        // init local
+        local = {};
+        // init modeJs
+        local.modeJs = (function () {
+            try {
+                return typeof navigator.userAgent === 'string' &&
+                    typeof document.querySelector('body') === 'object' &&
+                    typeof XMLHttpRequest.prototype.open === 'function' &&
+                    'browser';
+            } catch (errorCaughtBrowser) {
+                return module.exports &&
+                    typeof process.versions.node === 'string' &&
+                    typeof require('http').createServer === 'function' &&
+                    'node';
+            }
+        }());
+        // init global
+        local.global = local.modeJs === 'browser'
+            ? window
+            : global;
+        // init utility2_rollup
+        local = local.global.utility2_rollup || local;
+    }());
+
+
+
+/* jslint-ignore-begin */
+(function () { var exports, module; exports = module = {};
+// init lib marked
+// 2017-01-19T23:03:37Z
+// https://github.com/chjj/marked/blob/v0.3.7/lib/marked.js
+// utility2-uglifyjs https://raw.githubusercontent.com/chjj/marked/v0.3.7/lib/marked.js
+(function(){function t(t){this.tokens=[],this.tokens.links={},this.options=t||c.
+defaults,this.rules=e.normal,this.options.gfm&&(this.options.tables?this.rules=e
+.tables:this.rules=e.gfm)}function r(e,t){this.options=t||c.defaults,this.links=
+e,this.rules=n.normal,this.renderer=this.options.renderer||new i,this.renderer.options=
+this.options;if(!this.links)throw new Error("Tokens array requires a `links` property."
+);this.options.gfm?this.options.breaks?this.rules=n.breaks:this.rules=n.gfm:this
+.options.pedantic&&(this.rules=n.pedantic)}function i(e){this.options=e||{}}function s
+(e){this.tokens=[],this.token=null,this.options=e||c.defaults,this.options.renderer=
+this.options.renderer||new i,this.renderer=this.options.renderer,this.renderer.options=
+this.options}function o(e,t){return e.replace(t?/&/g:/&(?!#?\w+;)/g,"&amp;").replace
+(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function u(e){return e.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g,function(
+e,t){return t=t.toLowerCase(),t==="colon"?":":t.charAt(0)==="#"?t.charAt(1)==="x"?
+String.fromCharCode(parseInt(t.substring(2),16)):String.fromCharCode(+t.substring
+(1)):""})}function a(e,t){return e=e.source,t=t||"",function n(r,i){return r?(i=
+i.source||i,i=i.replace(/(^|[^\[])\^/g,"$1"),e=e.replace(r,i),n):new RegExp(e,t)
+}}function f(){}function l(e){var t=1,n,r;for(;t<arguments.length;t++){n=arguments
+[t];for(r in n)Object.prototype.hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e}function c
+(e,n,r){if(r||typeof n=="function"){r||(r=n,n=null),n=l({},c.defaults,n||{});var i=
+n.highlight,u,a,f=0;try{u=t.lex(e,n)}catch(h){return r(h)}a=u.length;var p=function(
+e){if(e)return n.highlight=i,r(e);var t;try{t=s.parse(u,n)}catch(o){e=o}return n
+.highlight=i,e?r(e):r(null,t)};if(!i||i.length<3)return p();delete n.highlight;if(!
+a)return p();for(;f<u.length;f++)(function(e){return e.type!=="code"?--a||p():i(
+e.text,e.lang,function(t,n){if(t)return p(t);if(n==null||n===e.text)return--a||p
+();e.text=n,e.escaped=!0,--a||p()})})(u[f]);return}try{return n&&(n=l({},c.defaults
+,n)),s.parse(t.lex(e,n),n)}catch(h){h.message+="\nPlease report this to https://github.com/chjj/marked."
+;if((n||c.defaults).silent)return"<p>An error occured:</p><pre>"+o(h.message+"",!0
+)+"</pre>";throw h}}var e={newline:/^\n+/,code:/^( {4}[^\n]+\n*)+/,fences:f,hr:/^( *[-*_]){3,} *(?:\n+|$)/
+,heading:/^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,nptable:f,lheading:/^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/
+,blockquote:/^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,list:/^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/
+,html:/^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/
+,def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,table:f
+,paragraph:/^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,text
+:/^[^\n]+/};e.bullet=/(?:[*+-]|\d+\.)/,e.item=/^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/
+,e.item=a(e.item,"gm")(/bull/g,e.bullet)(),e.list=a(e.list)(/bull/g,e.bullet)("hr"
+,"\\n+(?=\\1?(?:[-*_] *){3,}(?:\\n+|$))")("def","\\n+(?="+e.def.source+")")(),e.
+blockquote=a(e.blockquote)("def",e.def)(),e._tag="(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:/|[^\\w\\s@]*@)\\b"
+,e.html=a(e.html)("comment",/<!--[\s\S]*?-->/)("closed",/<(tag)[\s\S]+?<\/\1>/)("closing"
+,/<tag(?:"[^"]*"|'[^']*'|[^'">])*?>/)(/tag/g,e._tag)(),e.paragraph=a(e.paragraph
+)("hr",e.hr)("heading",e.heading)("lheading",e.lheading)("blockquote",e.blockquote
+)("tag","<"+e._tag)("def",e.def)(),e.normal=l({},e),e.gfm=l({},e.normal,{fences:/^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\s*\1 *(?:\n+|$)/
+,paragraph:/^/,heading:/^ *(#{1,6}) +([^\n]+?) *#* *(?:\n+|$)/}),e.gfm.paragraph=
+a(e.paragraph)("(?!","(?!"+e.gfm.fences.source.replace("\\1","\\2")+"|"+e.list.source
+.replace("\\1","\\3")+"|")(),e.tables=l({},e.gfm,{nptable:/^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/
+,table:/^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/}),t.rules=e,t
+.lex=function(e,n){var r=new t(n);return r.lex(e)},t.prototype.lex=function(e){return e=
+e.replace(/\r\n|\r/g,"\n").replace(/\t/g,"    ").replace(/\u00a0/g," ").replace(/\u2424/g
+,"\n"),this.token(e,!0)},t.prototype.token=function(t,n,r){var t=t.replace(/^ +$/gm
+,""),i,s,o,u,a,f,l,c,h;while(t){if(o=this.rules.newline.exec(t))t=t.substring(o[0
+].length),o[0].length>1&&this.tokens.push({type:"space"});if(o=this.rules.code.exec
+(t)){t=t.substring(o[0].length),o=o[0].replace(/^ {4}/gm,""),this.tokens.push({type
+:"code",text:this.options.pedantic?o:o.replace(/\n+$/,"")});continue}if(o=this.rules
+.fences.exec(t)){t=t.substring(o[0].length),this.tokens.push({type:"code",lang:o
+[2],text:o[3]||""});continue}if(o=this.rules.heading.exec(t)){t=t.substring(o[0]
+.length),this.tokens.push({type:"heading",depth:o[1].length,text:o[2]});continue}
+if(n&&(o=this.rules.nptable.exec(t))){t=t.substring(o[0].length),f={type:"table"
+,header:o[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:o[2].replace(/^ *|\| *$/g
+,"").split(/ *\| */),cells:o[3].replace(/\n$/,"").split("\n")};for(c=0;c<f.align
+.length;c++)/^ *-+: *$/.test(f.align[c])?f.align[c]="right":/^ *:-+: *$/.test(f.
+align[c])?f.align[c]="center":/^ *:-+ *$/.test(f.align[c])?f.align[c]="left":f.align
+[c]=null;for(c=0;c<f.cells.length;c++)f.cells[c]=f.cells[c].split(/ *\| */);this
+.tokens.push(f);continue}if(o=this.rules.lheading.exec(t)){t=t.substring(o[0].length
+),this.tokens.push({type:"heading",depth:o[2]==="="?1:2,text:o[1]});continue}if(
+o=this.rules.hr.exec(t)){t=t.substring(o[0].length),this.tokens.push({type:"hr"}
+);continue}if(o=this.rules.blockquote.exec(t)){t=t.substring(o[0].length),this.tokens
+.push({type:"blockquote_start"}),o=o[0].replace(/^ *> ?/gm,""),this.token(o,n,!0
+),this.tokens.push({type:"blockquote_end"});continue}if(o=this.rules.list.exec(t
+)){t=t.substring(o[0].length),u=o[2],this.tokens.push({type:"list_start",ordered
+:u.length>1}),o=o[0].match(this.rules.item),i=!1,h=o.length,c=0;for(;c<h;c++)f=o
+[c],l=f.length,f=f.replace(/^ *([*+-]|\d+\.) +/,""),~f.indexOf("\n ")&&(l-=f.length
+,f=this.options.pedantic?f.replace(/^ {1,4}/gm,""):f.replace(new RegExp("^ {1,"+
+l+"}","gm"),"")),this.options.smartLists&&c!==h-1&&(a=e.bullet.exec(o[c+1])[0],u!==
+a&&!(u.length>1&&a.length>1)&&(t=o.slice(c+1).join("\n")+t,c=h-1)),s=i||/\n\n(?!\s*$)/
+.test(f),c!==h-1&&(i=f.charAt(f.length-1)==="\n",s||(s=i)),this.tokens.push({type
+:s?"loose_item_start":"list_item_start"}),this.token(f,!1,r),this.tokens.push({type
+:"list_item_end"});this.tokens.push({type:"list_end"});continue}if(o=this.rules.
+html.exec(t)){t=t.substring(o[0].length),this.tokens.push({type:this.options.sanitize?"paragraph"
+:"html",pre:!this.options.sanitizer&&(o[1]==="pre"||o[1]==="script"||o[1]==="style"
+),text:o[0]});continue}if(!r&&n&&(o=this.rules.def.exec(t))){t=t.substring(o[0].
+length),this.tokens.links[o[1].toLowerCase()]={href:o[2],title:o[3]};continue}if(
+n&&(o=this.rules.table.exec(t))){t=t.substring(o[0].length),f={type:"table",header
+:o[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:o[2].replace(/^ *|\| *$/g
+,"").split(/ *\| */),cells:o[3].replace(/(?: *\| *)?\n$/,"").split("\n")};for(c=0
+;c<f.align.length;c++)/^ *-+: *$/.test(f.align[c])?f.align[c]="right":/^ *:-+: *$/
+.test(f.align[c])?f.align[c]="center":/^ *:-+ *$/.test(f.align[c])?f.align[c]="left"
+:f.align[c]=null;for(c=0;c<f.cells.length;c++)f.cells[c]=f.cells[c].replace(/^ *\| *| *\| *$/g
+,"").split(/ *\| */);this.tokens.push(f);continue}if(n&&(o=this.rules.paragraph.
+exec(t))){t=t.substring(o[0].length),this.tokens.push({type:"paragraph",text:o[1
+].charAt(o[1].length-1)==="\n"?o[1].slice(0,-1):o[1]});continue}if(o=this.rules.
+text.exec(t)){t=t.substring(o[0].length),this.tokens.push({type:"text",text:o[0]
+});continue}if(t)throw new Error("Infinite loop on byte: "+t.charCodeAt(0))}return this
+.tokens};var n={escape:/^\\([\\`*{}\[\]()#+\-.!_>])/,autolink:/^<([^ >]+(@|:\/)[^ >]+)>/
+,url:f,tag:/^<!--[\s\S]*?-->|^<\/?\w+(?:"[^"]*"|'[^']*'|[^'">])*?>/,link:/^!?\[(inside)\]\(href\)/
+,reflink:/^!?\[(inside)\]\s*\[([^\]]*)\]/,nolink:/^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/
+,strong:/^__([\s\S]+?)__(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,em:/^\b_((?:[^_]|__)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/
+,code:/^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,br:/^ {2,}\n(?!\s*$)/,del:f,text:/^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/
+};n._inside=/(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/,n._href=/\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/
+,n.link=a(n.link)("inside",n._inside)("href",n._href)(),n.reflink=a(n.reflink)("inside"
+,n._inside)(),n.normal=l({},n),n.pedantic=l({},n.normal,{strong:/^__(?=\S)([\s\S]*?\S)__(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/
+,em:/^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/}),n.gfm=l({},n.normal
+,{escape:a(n.escape)("])","~|])")(),url:/^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,del
+:/^~~(?=\S)([\s\S]*?\S)~~/,text:a(n.text)("]|","~]|")("|","|https?://|")()}),n.breaks=
+l({},n.gfm,{br:a(n.br)("{2,}","*")(),text:a(n.gfm.text)("{2,}","*")()}),r.rules=
+n,r.output=function(e,t,n){var i=new r(t,n);return i.output(e)},r.prototype.output=
+function(e){var t="",n,r,i,s;while(e){if(s=this.rules.escape.exec(e)){e=e.substring
+(s[0].length),t+=s[1];continue}if(s=this.rules.autolink.exec(e)){e=e.substring(s
+[0].length),s[2]==="@"?(r=s[1].charAt(6)===":"?this.mangle(s[1].substring(7)):this
+.mangle(s[1]),i=this.mangle("mailto:")+r):(r=o(s[1]),i=r),t+=this.renderer.link(
+i,null,r);continue}if(!this.inLink&&(s=this.rules.url.exec(e))){e=e.substring(s[0
+].length),r=o(s[1]),i=r,t+=this.renderer.link(i,null,r);continue}if(s=this.rules
+.tag.exec(e)){!this.inLink&&/^<a /i.test(s[0])?this.inLink=!0:this.inLink&&/^<\/a>/i
+.test(s[0])&&(this.inLink=!1),e=e.substring(s[0].length),t+=this.options.sanitize?
+this.options.sanitizer?this.options.sanitizer(s[0]):o(s[0]):s[0];continue}if(s=this
+.rules.link.exec(e)){e=e.substring(s[0].length),this.inLink=!0,t+=this.outputLink
+(s,{href:s[2],title:s[3]}),this.inLink=!1;continue}if((s=this.rules.reflink.exec
+(e))||(s=this.rules.nolink.exec(e))){e=e.substring(s[0].length),n=(s[2]||s[1]).replace
+(/\s+/g," "),n=this.links[n.toLowerCase()];if(!n||!n.href){t+=s[0].charAt(0),e=s
+[0].substring(1)+e;continue}this.inLink=!0,t+=this.outputLink(s,n),this.inLink=!1
+;continue}if(s=this.rules.strong.exec(e)){e=e.substring(s[0].length),t+=this.renderer
+.strong(this.output(s[2]||s[1]));continue}if(s=this.rules.em.exec(e)){e=e.substring
+(s[0].length),t+=this.renderer.em(this.output(s[2]||s[1]));continue}if(s=this.rules
+.code.exec(e)){e=e.substring(s[0].length),t+=this.renderer.codespan(o(s[2],!0));
+continue}if(s=this.rules.br.exec(e)){e=e.substring(s[0].length),t+=this.renderer
+.br();continue}if(s=this.rules.del.exec(e)){e=e.substring(s[0].length),t+=this.renderer
+.del(this.output(s[1]));continue}if(s=this.rules.text.exec(e)){e=e.substring(s[0
+].length),t+=this.renderer.text(o(this.smartypants(s[0])));continue}if(e)throw new
+Error("Infinite loop on byte: "+e.charCodeAt(0))}return t},r.prototype.outputLink=
+function(e,t){var n=o(t.href),r=t.title?o(t.title):null;return e[0].charAt(0)!=="!"?
+this.renderer.link(n,r,this.output(e[1])):this.renderer.image(n,r,o(e[1]))},r.prototype
+.smartypants=function(e){return this.options.smartypants?e.replace(/---/g,"\u2014"
+).replace(/--/g,"\u2013").replace(/(^|[-\u2014/(\[{"\s])'/g,"$1\u2018").replace(/'/g
+,"\u2019").replace(/(^|[-\u2014/(\[{\u2018\s])"/g,"$1\u201c").replace(/"/g,"\u201d"
+).replace(/\.{3}/g,"\u2026"):e},r.prototype.mangle=function(e){if(!this.options.
+mangle)return e;var t="",n=e.length,r=0,i;for(;r<n;r++)i=e.charCodeAt(r),Math.random
+()>.5&&(i="x"+i.toString(16)),t+="&#"+i+";";return t},i.prototype.code=function(
+e,t,n){if(this.options.highlight){var r=this.options.highlight(e,t);r!=null&&r!==
+e&&(n=!0,e=r)}return t?'<pre><code class="'+this.options.langPrefix+o(t,!0)+'">'+
+(n?e:o(e,!0))+"\n</code></pre>\n":"<pre><code>"+(n?e:o(e,!0))+"\n</code></pre>"}
+,i.prototype.blockquote=function(e){return"<blockquote>\n"+e+"</blockquote>\n"},
+i.prototype.html=function(e){return e},i.prototype.heading=function(e,t,n){return"<h"+
+t+' id="'+this.options.headerPrefix+n.toLowerCase().replace(/[^\w]+/g,"-")+'">'+
+e+"</h"+t+">\n"},i.prototype.hr=function(){return this.options.xhtml?"<hr/>\n":"<hr>\n"
+},i.prototype.list=function(e,t){var n=t?"ol":"ul";return"<"+n+">\n"+e+"</"+n+">\n"
+},i.prototype.listitem=function(e){return"<li>"+e+"</li>\n"},i.prototype.paragraph=
+function(e){return"<p>"+e+"</p>\n"},i.prototype.table=function(e,t){return"<table>\n<thead>\n"+
+e+"</thead>\n"+"<tbody>\n"+t+"</tbody>\n"+"</table>\n"},i.prototype.tablerow=function(
+e){return"<tr>\n"+e+"</tr>\n"},i.prototype.tablecell=function(e,t){var n=t.header?"th"
+:"td",r=t.align?"<"+n+' style="text-align:'+t.align+'">':"<"+n+">";return r+e+"</"+
+n+">\n"},i.prototype.strong=function(e){return"<strong>"+e+"</strong>"},i.prototype
+.em=function(e){return"<em>"+e+"</em>"},i.prototype.codespan=function(e){return"<code>"+
+e+"</code>"},i.prototype.br=function(){return this.options.xhtml?"<br/>":"<br>"}
+,i.prototype.del=function(e){return"<del>"+e+"</del>"},i.prototype.link=function(
+e,t,n){if(this.options.sanitize){try{var r=decodeURIComponent(u(e)).replace(/[^\w:]/g
+,"").toLowerCase()}catch(i){return""}if(r.indexOf("javascript:")===0||r.indexOf("vbscript:"
+)===0||r.indexOf("data:")===0)return""}var s='<a href="'+e+'"';return t&&(s+=' title="'+
+t+'"'),s+=">"+n+"</a>",s},i.prototype.image=function(e,t,n){var r='<img src="'+e+'" alt="'+
+n+'"';return t&&(r+=' title="'+t+'"'),r+=this.options.xhtml?"/>":">",r},i.prototype
+.text=function(e){return e},s.parse=function(e,t,n){var r=new s(t,n);return r.parse
+(e)},s.prototype.parse=function(e){this.inline=new r(e.links,this.options,this.renderer
+),this.tokens=e.reverse();var t="";while(this.next())t+=this.tok();return t},s.prototype
+.next=function(){return this.token=this.tokens.pop()},s.prototype.peek=function(
+){return this.tokens[this.tokens.length-1]||0},s.prototype.parseText=function(){
+var e=this.token.text;while(this.peek().type==="text")e+="\n"+this.next().text;return this
+.inline.output(e)},s.prototype.tok=function(){switch(this.token.type){case"space"
+:return"";case"hr":return this.renderer.hr();case"heading":return this.renderer.
+heading(this.inline.output(this.token.text),this.token.depth,this.token.text);case"code"
+:return this.renderer.code(this.token.text,this.token.lang,this.token.escaped);case"table"
+:var e="",t="",n,r,i,s,o;i="";for(n=0;n<this.token.header.length;n++)s={header:!0
+,align:this.token.align[n]},i+=this.renderer.tablecell(this.inline.output(this.token
+.header[n]),{header:!0,align:this.token.align[n]});e+=this.renderer.tablerow(i);
+for(n=0;n<this.token.cells.length;n++){r=this.token.cells[n],i="";for(o=0;o<r.length
+;o++)i+=this.renderer.tablecell(this.inline.output(r[o]),{header:!1,align:this.token
+.align[o]});t+=this.renderer.tablerow(i)}return this.renderer.table(e,t);case"blockquote_start"
+:var t="";while(this.next().type!=="blockquote_end")t+=this.tok();return this.renderer
+.blockquote(t);case"list_start":var t="",u=this.token.ordered;while(this.next().
+type!=="list_end")t+=this.tok();return this.renderer.list(t,u);case"list_item_start"
+:var t="";while(this.next().type!=="list_item_end")t+=this.token.type==="text"?this
+.parseText():this.tok();return this.renderer.listitem(t);case"loose_item_start":
+var t="";while(this.next().type!=="list_item_end")t+=this.tok();return this.renderer
+.listitem(t);case"html":var a=!this.token.pre&&!this.options.pedantic?this.inline
+.output(this.token.text):this.token.text;return this.renderer.html(a);case"paragraph"
+:return this.renderer.paragraph(this.inline.output(this.token.text));case"text":
+return this.renderer.paragraph(this.parseText())}},f.exec=f,c.options=c.setOptions=
+function(e){return l(c.defaults,e),c},c.defaults={gfm:!0,tables:!0,breaks:!1,pedantic
+:!1,sanitize:!1,sanitizer:null,mangle:!0,smartLists:!1,silent:!1,highlight:null,
+langPrefix:"lang-",smartypants:!1,headerPrefix:"",renderer:new i,xhtml:!1},c.Parser=
+s,c.parser=s.parse,c.Renderer=i,c.Lexer=t,c.lexer=t.lex,c.InlineLexer=r,c.inlineLexer=
+r.output,c.parse=c,typeof module!="undefined"&&typeof exports=="object"?module.exports=
+c:typeof define=="function"&&define.amd?define(function(){return c}):this.marked=
+c}).call(function(){return this||(typeof window!="undefined"?window:global)}())
+local.marked = module.exports; }());
+/* jslint-ignore-end */
+    if (local.modeJs === 'browser') {
+        local.global.utility2_marked = local.marked;
+    } else {
+        module.exports = local.marked;
+    }
+}());
+/* script-end /assets.utility2.lib.marked.js */
 
 
 
@@ -13678,8 +13990,13 @@ s=0;s<i;s++)n[r+s]=e[t+s]|0},sjcl.misc.scrypt.blockxor=function(e,t,n,r,i){var s
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.uglifyjs = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_uglifyjs = local;
@@ -13692,8 +14009,9 @@ s=0;s<i;s++)n[r+s]=e[t+s]|0},sjcl.misc.scrypt.blockxor=function(e,t,n,r,i){var s
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.uglifyjs = local;
     }());
 
 
@@ -14495,8 +14813,13 @@ split_lines=split_lines,exports.MAP=MAP,exports.ast_squeeze_more=require("./sque
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.utility2 = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_utility2 = local;
@@ -14509,10 +14832,19 @@ split_lines=split_lines,exports.MAP=MAP,exports.ast_squeeze_more=require("./sque
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.utility2 = local;
         // init lib utility2
         local.global.utility2 = local.global.utility2_utility2 = local.utility2 = local;
+        // init nop
+        local.nop = function () {
+        /*
+         * this function will do nothing
+         */
+            return;
+        };
+
     }());
 
 
@@ -14534,12 +14866,6 @@ split_lines=split_lines,exports.MAP=MAP,exports.ast_squeeze_more=require("./sque
             // return arg for inspection
             return arg;
         };
-        local.nop = function () {
-        /*
-         * this function will do nothing
-         */
-            return;
-        };
         // init lib
         [
             'apidoc',
@@ -14547,6 +14873,7 @@ split_lines=split_lines,exports.MAP=MAP,exports.ast_squeeze_more=require("./sque
             'github_crud',
             'istanbul',
             'jslint',
+            'marked',
             'sjcl',
             'uglifyjs'
         ].forEach(function (key) {
@@ -14559,7 +14886,7 @@ split_lines=split_lines,exports.MAP=MAP,exports.ast_squeeze_more=require("./sque
             local[key] = local[key] || {};
         });
         // init assets and templates
-        local.assetsDict = {};
+        local.assetsDict = local.assetsDict || {};
 
 
 
@@ -14604,15 +14931,19 @@ body > button {\n\
 button {\n\
     cursor: pointer;\n\
 }\n\
+pre {\n\
+    overflow-wrap: break-word;\n\
+    white-space: pre-wrap;\n\
+}\n\
 @keyframes uiAnimateShake {\n\
-    100% {\n\
-        transform: translateX(0);\n\
-    }\n\
-    0%, 20%, 60% {\n\
+    0%, 50% {\n\
         transform: translateX(10px);\n\
     }\n\
-    40%, 80% {\n\
+    25%, 75% {\n\
         transform: translateX(-10px);\n\
+    }\n\
+    100% {\n\
+        transform: translateX(0);\n\
     }\n\
 }\n\
 .uiAnimateShake {\n\
@@ -14854,8 +15185,7 @@ instruction\n\
                 // show tests\n\
                 if (document.querySelector(\'#testReportDiv1\').style.maxHeight === \'0px\') {\n\
                     local.uiAnimateSlideDown(document.querySelector(\'#testReportDiv1\'));\n\
-                    document.querySelector(\'#testRunButton1\').textContent =\n\
-                        \'hide internal test\';\n\
+                    document.querySelector(\'#testRunButton1\').textContent = \'hide internal test\';\n\
                     local.modeTest = true;\n\
                     local.testRunDefault(local);\n\
                 // hide tests\n\
@@ -15051,8 +15381,13 @@ local.assetsDict['/assets.lib.template.js'] = '\
             : global;\n\
         // init utility2_rollup\n\
         local = local.global.utility2_rollup || local;\n\
-        // init lib\n\
-        local.local = local.jslint = local;\n\
+        /* istanbul ignore next */\n\
+        if (!local) {\n\
+            local = local.global.utility2_rollup ||\n\
+                local.global.utility2_rollup_old ||\n\
+                require(\'./assets.utility2.rollup.js\');\n\
+            local.fs = null;\n\
+        }\n\
         // init exports\n\
         if (local.modeJs === \'browser\') {\n\
             local.global.utility2_jslint = local;\n\
@@ -15065,8 +15400,9 @@ local.assetsDict['/assets.lib.template.js'] = '\
             });\n\
             module.exports = local;\n\
             module.exports.__dirname = __dirname;\n\
-            module.exports.module = module;\n\
         }\n\
+        // init lib\n\
+        local.local = local.jslint = local;\n\
     }());\n\
 }());\n\
 ';
@@ -15242,10 +15578,13 @@ PORT=8081 node ./assets.app.js\n\
         "url": "https://github.com/kaizhu256/node-jslint-lite.git"\n\
     },\n\
     "scripts": {\n\
+        "apidocRawCreate": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptApidocRawCreate",\n\
+        "apidocRawFetch": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptApidocRawFetch",\n\
         "build-ci": "utility2 shReadmeTest build_ci.sh",\n\
         "env": "env",\n\
         "heroku-postbuild": "npm uninstall utility2 2>/dev/null; npm install kaizhu256/node-utility2#alpha && utility2 shDeployHeroku",\n\
-        "postinstall": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh postinstall",\n\
+        "nameAliasPublish": "",\n\
+        "postinstall": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptPostinstall",\n\
         "start": "PORT=${PORT:-8080} utility2 start test.js",\n\
         "test": "PORT=$(utility2 shServerPortRandom) utility2 test test.js"\n\
     },\n\
@@ -15268,8 +15607,9 @@ PORT=8081 node ./assets.app.js\n\
 # this shell script will run the build for this package\n\
 \n\
 shBuildCiAfter() {(set -e\n\
+    # shDeployCustom\n\
     shDeployGithub\n\
-    shDeployHeroku\n\
+    # shDeployHeroku\n\
     shReadmeTest example.sh\n\
 )}\n\
 \n\
@@ -15446,17 +15786,37 @@ local.assetsDict['/assets.testReport.template.html'] = '\
 .testReportDiv {\n\
     font-family: Arial, Helvetica, sans-serif;\n\
 }\n\
-.testReportDiv .displayNone {\n\
-    display: none;\n\
-}\n\
-.testReportDiv .footer {\n\
-    text-align: center;\n\
-}\n\
 .testReportDiv img {\n\
     border: 1px solid black;\n\
     margin: 5px 0 5px 0;\n\
     max-height: 256px;\n\
     max-width: 512px;\n\
+}\n\
+.testReportDiv pre {\n\
+    background: #fdd;\n\
+    border-top: 1px solid black;\n\
+    margin-bottom: 0;\n\
+    overflow-wrap: break-word;\n\
+    padding: 10px;\n\
+    white-space: pre-wrap;\n\
+}\n\
+.testReportDiv span {\n\
+    display: inline-block;\n\
+    width: 120px;\n\
+}\n\
+.testReportDiv table {\n\
+    border-top: 1px solid black;\n\
+    text-align: left;\n\
+    width: 100%;\n\
+}\n\
+.testReportDiv table > tbody > tr:nth-child(odd) {\n\
+    background: #bfb;\n\
+}\n\
+.testReportDiv .displayNone {\n\
+    display: none;\n\
+}\n\
+.testReportDiv .footer {\n\
+    text-align: center;\n\
 }\n\
 .testReportDiv .platform {\n\
     background: #fff;\n\
@@ -15465,26 +15825,7 @@ local.assetsDict['/assets.testReport.template.html'] = '\
     padding: 0 10px 10px 10px;\n\
     text-align: left;\n\
 }\n\
-.testReportDiv pre {\n\
-    background: #fdd;\n\
-    border-top: 1px solid black;\n\
-    margin-bottom: 0;\n\
-    padding: 10px;\n\
-    white-space: pre-wrap;\n\
-}\n\
-.testReportDiv span {\n\
-    display: inline-block;\n\
-    width: 120px;\n\
-}\n\
 .testReportDiv .summary {\n\
-    background: #bfb;\n\
-}\n\
-.testReportDiv table {\n\
-    border-top: 1px solid black;\n\
-    text-align: left;\n\
-    width: 100%;\n\
-}\n\
-.testReportDiv table > tbody > tr:nth-child(odd) {\n\
     background: #bfb;\n\
 }\n\
 .testReportDiv .testFailed {\n\
@@ -16215,7 +16556,7 @@ local.assetsDict['/favicon.ico'] = '';
             global.local.testCase_buildLib_default(options, local.onErrorThrow);
             global.local.testCase_buildTest_default(options, local.onErrorThrow);
             global.local.testCase_buildCustomOrg_default(options, local.onErrorThrow);
-            local.buildApp([], onError);
+            local.buildApp(options, onError);
         };
 
         local._testCase_buildCustomOrg_default = function (options, onError) {
@@ -16266,7 +16607,8 @@ local.assetsDict['/favicon.ico'] = '';
         /*
          * this function will test webpage's default handling-behavior
          */
-            if (local.modeJs !== 'node') {
+            if (local.modeJs === 'browser') {
+                local.validateDocumentStyle();
                 onError(null, options);
                 return;
             }
@@ -16296,6 +16638,9 @@ local.assetsDict['/favicon.ico'] = '';
             var tmp, xhr;
             // init standalone handling-behavior
             local.nop = local.nop || function () {
+            /*
+             * this function will do nothing
+             */
                 return;
             };
             local.ajaxProgressCounter = local.ajaxProgressCounter || 0;
@@ -16329,9 +16674,6 @@ local.assetsDict['/favicon.ico'] = '';
             Object.keys(options.headers || {}).forEach(function (key) {
                 xhr.headers[key.toLowerCase()] = options.headers[key];
             });
-            // init corsForwardProxyHostifNeeded
-            xhr.corsForwardProxyHostifNeeded = xhr.corsForwardProxyHostifNeeded ||
-                local.corsForwardProxyHostifNeeded || local.nop;
             // init method
             xhr.method = xhr.method || 'GET';
             // init timeStart
@@ -16423,12 +16765,11 @@ local.assetsDict['/favicon.ico'] = '';
             xhr.addEventListener('progress', local.ajaxProgressUpdate);
             xhr.upload.addEventListener('progress', local.ajaxProgressUpdate);
             // open url through corsForwardProxyHost
-            xhr.corsForwardProxyHost = local.modeJs === 'browser' &&
-                (/^https{0,1}:/).test(xhr.url) &&
-                xhr.url.indexOf(location.protocol + '//' + location.host) !== 0 &&
-                xhr.corsForwardProxyHostifNeeded(xhr.url, location);
-            if (xhr.corsForwardProxyHost) {
-                xhr.open(xhr.method, xhr.corsForwardProxyHost);
+            xhr.corsForwardProxyHost = xhr.corsForwardProxyHost || local.corsForwardProxyHost;
+            xhr.location = xhr.location || local.global.location || {};
+            tmp = (local.corsForwardProxyHostIfNeeded || local.nop)(xhr);
+            if (tmp) {
+                xhr.open(xhr.method, tmp);
                 xhr.setRequestHeader('forward-proxy-headers', JSON.stringify(xhr.headers));
                 xhr.setRequestHeader('forward-proxy-url', xhr.url);
             // open url
@@ -16502,7 +16843,7 @@ local.assetsDict['/favicon.ico'] = '';
                 : 1500);
         };
 
-        local.assert = function (passed, message) {
+        local.assert = function (passed, message, onError) {
         /*
          * this function will throw the error message if passed is falsey
          */
@@ -16518,7 +16859,12 @@ local.assetsDict['/favicon.ico'] = '';
                     ? message
                     // else JSON.stringify message
                     : JSON.stringify(message));
-            throw error;
+            // debug error
+            local._debugAssertError = error;
+            onError = onError || function (error) {
+                throw error;
+            };
+            onError(error);
         };
 
         local.assertJsonEqual = function (aa, bb) {
@@ -17505,8 +17851,78 @@ return Utf8ArrayToStr(bff);
         /*
          * this function will build the app
          */
+            options = local.objectSetDefault(options, { assetsList: [] });
+            // validate fileKeySorted
+            local._debugAssertError = null;
+            options.data = [
+                'README.md',
+                'lib.' + local.env.npm_package_nameLib + '.js',
+                'lib.' + local.env.npm_package_nameLib + '.sh',
+                'npm_scripts.sh'
+            ].map(function (file) {
+                return '\n// file - ' + file + '\n' + (local.tryCatchReadFile(file, 'utf8') + '\n')
+                    // filter `
+                    .replace((/^`.*?\n/gm), '')
+                    // filter skip
+                    .replace((/^( {4}\/\/ run .*?\bjs-env code)\b/gm), '`$1')
+                    .replace((/^(\/\/ init lib)\b/gm), '`$1')
+                    // filter local
+                    .replace((/^ *?local\.(?:modeJs|global|local|tmp)\b.*?\n/gm), '')
+                    .replace((/.*?\b(?:assets\.example|assets\.index|shPrintAndEval)\b.*?\n/g), '')
+                    .replace((/.*?\\n\\\n/g), '')
+                    .replace((/^ .*?\\\n/gm), '')
+                    .replace((/^((?:| {4}| {8})local\.\S*? =(?: |$))/gm), '`$1')
+                    // filter shXxx
+                    .replace((/^(sh[A-Z]\w*?\(\) \{)/gm), '`$1')
+                    // filter `
+                    .replace((/\n\n+/g), '\n')
+                    .replace((/^[^`].*?\n/gm), '')
+                    .replace((/^`/gm), '');
+            }).join('\n').trim();
+            local.fs.writeFileSync('tmp/validateFileKeySorted.js', options.data);
+            options.keyLocal = options.keySh = '';
+            options.data.split('\n').forEach(function (line) {
+                line = line.trim();
+                switch (line.slice(0, 2)) {
+                case '':
+                case '//':
+                    // reset key
+                    options.keyLocal = options.keySh = '';
+                    // update file
+                    line.replace((/^\/\/ file - (.*?)$/), function (match0, match1) {
+                        match0 = match1;
+                        options.file = match0;
+                    });
+                    break;
+                case 'sh':
+                    // reset key
+                    options.keyLocal = '';
+                    // validate key < line
+                    local.assert(
+                        options.keySh <= line,
+                        'buildApp.sortError\n' + options.file + '\n' + options.keySh + '\n' + line,
+                        console.error
+                    );
+                    // update key
+                    options.keySh = line;
+                    break;
+                default:
+                    // validate key < line
+                    local.assert(
+                        options.keyLocal <= line,
+                        'buildApp.sortError\n' + options.file + '\n' + options.keyLocal + '\n' +
+                            line,
+                        console.error
+                    );
+                    // update key
+                    options.keyLocal = line;
+                }
+            });
+            // validate no error occurred
+            local.assert(!local._debugAssertError, local._debugAssertError);
+            // build assets
             local.fsRmrSync(local.env.npm_config_dir_build + '/app');
-            local.onParallelList({ list: options.concat([{
+            local.onParallelList({ list: options.assetsList.concat([{
                 file: '/assets.' + local.env.npm_package_nameLib + '.html',
                 url: '/index.html'
             }, {
@@ -17685,7 +18101,7 @@ return Utf8ArrayToStr(bff);
                 // customize body after use strict
                 (/\n {4}'use strict';\n[\S\s]*?\n\n\n\n/),
                 // customize body after init exports
-                (/\n {12}module.exports.module = module;\n[\S\s]*?$/)
+                (/\n {8}\/\/ init lib\n[\S\s]*?$/)
             ].forEach(function (rgx) {
                 // handle large string-replace
                 options.dataFrom.replace(rgx, function (match0) {
@@ -17700,16 +18116,15 @@ return Utf8ArrayToStr(bff);
             /* istanbul ignore next */
             if (!local.env.npm_config_mode_coverage) {
                 // normalize function-before
-                options.dataTo = options.dataTo.replace(new RegExp('\\n {4}\\/\\/ ' +
-                    'run shared js-env code - function-before\\n' +
-                    '[\\S\\s]+?\\n {4}\\}\\(\\)\\);\\n'), function (match0) {
-                    return match0.replace(new RegExp('^ {8}local\\.(\\w+) = ' +
-                        'function \\([\\S\\s]+?\\n {8}\\};$', 'gm'), function (match0, match1) {
-                        if (typeof local[match1] !== 'function') {
-                            return match0;
-                        }
-                        return '        local.' + match1 + ' = ' + local[match1].toString() +
-                            ';';
+                options.dataTo = options.dataTo.replace((
+                    /\n {4}\/\/ run shared js-env code - function-before\n[\S\s]+?\n {4}\}\(\)\);\n/
+                ), function (match0) {
+                    return match0.replace((
+                        /^ {8}local\.(\w+) = function \([\S\s]+?\n {8}\};$/gm
+                    ), function (match0, match1) {
+                        return typeof local[match1] === 'function'
+                            ? '        local.' + match1 + ' = ' + local[match1].toString() + ';'
+                            : match0;
                     });
                 });
             }
@@ -17717,9 +18132,8 @@ return Utf8ArrayToStr(bff);
             if (local.fs.existsSync('./assets.utility2.rollup.js') &&
                     local.env.npm_package_nameLib !== 'swgg') {
                 options.dataTo = options.dataTo.replace(
-                    'module.exports = local;',
-                    "module.exports = local.global.utility2_rollup || " +
-                        "require('./assets.utility2.rollup.js');"
+                    '        if (!local) {\n',
+                    '        if (local) {\n'
                 );
             }
             options.customize();
@@ -17822,6 +18236,10 @@ return Utf8ArrayToStr(bff);
                     });
                 });
             });
+            // customize version
+            options.dataTo = options.dataTo.replace((
+                /^(#### changelog for v|- npm publish v)\d{4}\.\d{1,2}\.\d{1,2}$/gm
+            ), '$1' + options.packageJson.version);
             // customize swaggerdoc
             if (!local.assetsDict['/assets.swgg.swagger.json'] ||
                     (/\bswggUiContainer\b/).test(local.assetsDict['/index.html']) ||
@@ -17920,18 +18338,14 @@ return Utf8ArrayToStr(bff);
                     local.fs.readFileSync('assets.swgg.swagger.json', 'utf8')
                 ));
                 local.objectSetOverride(options.swaggerJson, { info: {
-                    description: options.packageJson.description,
                     title: options.packageJson.name,
                     version: options.packageJson.version,
-                    'x-swgg-downloadStandaloneApp': ((/\bhttps:\/\/.*?\/assets\.app\.js/).exec(
-                        options.dataTo.replace(new RegExp(
-                            'https:\/\/kaizhu256.github.io' +
-                                '\/node-utility2\/build..beta..travis-ci.org\/app\/assets.app.js',
-                            'g'
-                        ), '')
-                    ) || {})[0],
+                    'x-swgg-description': options.packageJson.description,
                     'x-swgg-homepage': options.packageJson.homepage
                 } }, 2);
+                options.dataTo.replace((/\bhttps:\/\/.*?\/assets\.app\.js/), function (match0) {
+                    options.swaggerJson['x-swgg-downloadStandaloneApp'] = match0;
+                });
                 // save assets.swgg.swagger.json
                 local.fs.writeFileSync('assets.swgg.swagger.json', local.jsonStringifyOrdered(
                     options.swaggerJson,
@@ -18174,8 +18588,7 @@ return Utf8ArrayToStr(bff);
 
         local.corsBackendHostInject = function (url, backendHost, rgxInject, location) {
         /*
-         * this function will inject backendHost into the url,
-         * if location.host is a github site
+         * this function will inject backendHost into the url, if location.host is a github site
          */
             location = location || (typeof window === 'object' && window && window.location);
             if (!(backendHost && location && (/\bgithub.io$/).test(location.host))) {
@@ -18193,17 +18606,17 @@ return Utf8ArrayToStr(bff);
             return url.replace(rgxInject || (/.*()/), backendHost + '$1');
         };
 
-        local.corsForwardProxyHostifNeeded = function (url, location) {
+        local.corsForwardProxyHostIfNeeded = function (xhr) {
         /*
-         * this function will return a corsForwardProxyHost if needed by the url
+         * this function will return xhr.corsForwardProxyHost, if needed
          */
-            // jslint-hack
-            local.nop(url);
             return local.modeJs === 'browser' &&
                 local.env.npm_package_nameLib &&
-                (/\bgithub.io$/).test(location.host)
-                ? local.corsForwardProxyHost || 'https://h1-proxy1.herokuapp.com'
-                : location.protocol + '//' + location.host;
+                (/^https?:\/\//).test(xhr.url) &&
+                xhr.url.indexOf(xhr.location.protocol + '//' + xhr.location.host) !== 0 &&
+                (/\.github\.io$/).test(xhr.location.host) &&
+                xhr.corsForwardProxyHost !== 'disabled' &&
+                (xhr.corsForwardProxyHost || 'https://h1-proxy1.herokuapp.com');
         };
 
         local.dbTableCustomOrgCreate = function (options, onError) {
@@ -18598,8 +19011,8 @@ return Utf8ArrayToStr(bff);
                 );
                 break;
             case '.js':
-                if ((script.indexOf('/*jslint') >= 0 &&
-                        !local.global.__coverage__) || mode === 'force') {
+                if ((script.indexOf('/*jslint') >= 0 && !local.global.__coverage__) ||
+                        mode === 'force') {
                     local.jslintAndPrint(script, file);
                 }
                 break;
@@ -18665,6 +19078,13 @@ return Utf8ArrayToStr(bff);
                 return JSON.stringify(jsonObj);
             };
             circularList = [];
+            // try to derefernce all properties in jsonObj
+            (function () {
+                try {
+                    jsonObj = JSON.parse(JSON.stringify(jsonObj));
+                } catch (ignore) {
+                }
+            }());
             return JSON.stringify(typeof jsonObj === 'object' && jsonObj
                 // recurse
                 ? JSON.parse(stringify(jsonObj))
@@ -18881,7 +19301,7 @@ return Utf8ArrayToStr(bff);
 
         local.middlewareCacheControlLastModified = function (request, response, nextMiddleware) {
         /*
-         * this function will run the middleware that will update the Last-Modified header
+         * this function will run the middleware that will update the response-header Last-Modified
          */
             // do not cache if headers already sent or url has '?' search indicator
             if (!(response.headersSent || request.url.indexOf('?') >= 0)) {
@@ -19111,7 +19531,7 @@ return Utf8ArrayToStr(bff);
         /*
          * this function will search modulePathList for the module's __dirname
          */
-            var result, tmp;
+            var result;
             // search process.cwd()
             if (!module || module === '.' || module.indexOf('/') >= 0) {
                 return require('path').resolve(process.cwd(), module || '');
@@ -19123,11 +19543,13 @@ return Utf8ArrayToStr(bff);
                 .concat([process.env.HOME + '/node_modules', '/usr/local/lib/node_modules'])
                 .some(function (modulePath) {
                     try {
-                        tmp = require('path').resolve(process.cwd(), modulePath + '/' + module);
-                        result = require('fs').statSync(tmp).isDirectory() && tmp;
+                        result = require('path').resolve(process.cwd(), modulePath + '/' + module);
+                        result = require('fs').statSync(result).isDirectory() && result;
                         return result;
-                    } catch (ignore) {
+                    } catch (errorCaught) {
+                        result = null;
                     }
+                    return result;
                 });
             return result || '';
         };
@@ -19180,6 +19602,27 @@ return Utf8ArrayToStr(bff);
                     ? value
                     : valueDefault || '';
             }
+        };
+
+        local.numberToRomanNumerals = function (num) {
+        /*
+         * this function will convert num to a roman-numeral
+         * https://stackoverflow.com/questions/9083037/convert-a-number-into-a-roman-numeral-in-javascript
+         */
+            var digits, ii, key, roman;
+            digits = String(+num).split('');
+            key = [
+                '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
+                '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
+                '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+            ];
+            roman = '';
+            ii = 3;
+            while (ii) {
+                ii -= 1;
+                roman = (key[+digits.pop() + (ii * 10)] || '') + roman;
+            }
+            return new Array(+digits.join('') + 1).join('M') + roman;
         };
 
         local.objectGetElementFirst = function (arg) {
@@ -19762,7 +20205,7 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
             local.testMock(mockList, function (onError) {
                 local.tryCatchOnError(function () {
                     exports = require(file);
-                }, console.error);
+                }, local.onErrorDefault);
                 onError();
             }, local.onErrorThrow);
             return exports;
@@ -19797,10 +20240,8 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                             local.tryCatchOnError(function () {
                                 // validate no error occurred
                                 local.assert(!error, error);
-                                local.swgg.validateBySwaggerJson({
-                                    swaggerJson: JSON.parse(data)
-                                });
-                            }, console.error);
+                                local.swgg.swaggerValidateJson(JSON.parse(data));
+                            }, local.onErrorDefault);
                         });
                         break;
                     }
@@ -19815,6 +20256,12 @@ vendor\\)s\\{0,1\\}\\(\\b\\|_\\)\
                         // jslint file
                         local.fs.readFile(file, 'utf8', function (error, data) {
                             local.jslintAndPrintConditional(!error && data, file);
+                        });
+                        break;
+                    case '.sh':
+                        // jslint file
+                        local.fs.readFile(file, 'utf8', function (error, data) {
+                            local.jslintAndPrintConditional(!error && data, file + '.html');
                         });
                         break;
                     }
@@ -20282,6 +20729,37 @@ instruction\n\
             });
         };
 
+        local.stringRegexpEscape = function (text) {
+        /*
+         * this function will make the text html-safe
+         * https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
+         */
+            return text.replace(/[\-\/\\\^$*+?.()|\[\]{}]/g, '\\$&');
+        };
+
+        local.stringTruncate = function (text, maxLength) {
+        /*
+         * this function will truncate the text to the given maxLength
+         */
+            return text.length > maxLength
+                ? text.slice(0, maxLength - 3).trimRight() + '...'
+                : text;
+        };
+
+        local.stringUniqueKey = function (text) {
+        /*
+         * this function will return a string-key that is unique in the given text
+         */
+            var key;
+            // seed the key with the least frequent letters in the english-language
+            // https://en.wikipedia.org/wiki/Letter_frequency
+            key = 'zqxj';
+            do {
+                key += ((1 + Math.random()) * 0x10000000000000).toString(36).slice(1);
+            } while (text.indexOf(key) >= 0);
+            return key;
+        };
+
         local.taskCreate = function (options, onTask, onError) {
         /*
          * this function will create the task onTask named options.key, if it does not exist,
@@ -20393,12 +20871,15 @@ instruction\n\
         /*
          * this function will render the template with the given dict
          */
-            var argList, getValue, match, renderPartial, rgx, tryCatch, value;
+            var argList, getValue, match, renderPartial, rgx, tryCatch, skip, value;
             dict = dict || {};
             options = options || {};
             getValue = function (key) {
                 argList = key.split(' ');
                 value = dict;
+                if (argList[0] === '#this/') {
+                    return;
+                }
                 // iteratively lookup nested values in the dict
                 argList[0].split('.').forEach(function (key) {
                     value = value && value[key];
@@ -20408,13 +20889,19 @@ instruction\n\
             renderPartial = function (match0, helper, key, partial) {
                 switch (helper) {
                 case 'each':
+                case 'eachTrimRightComma':
                     value = getValue(key);
-                    return Array.isArray(value)
+                    value = Array.isArray(value)
                         ? value.map(function (dict) {
                             // recurse with partial
                             return local.templateRender(partial, dict, options);
                         }).join('')
                         : '';
+                    // remove trailing-comma from last element
+                    if (helper === 'eachTrimRightComma') {
+                        value = value.trimRight().replace((/,$/), '');
+                    }
+                    return value;
                 case 'if':
                     partial = partial.split('{{#unless ' + key + '}}');
                     partial = getValue(key)
@@ -20458,14 +20945,14 @@ instruction\n\
             }
             // search for keys in the template
             return template.replace((/\{\{[^}]+?\}\}/g), function (match0) {
-                var htmlBr, notHtmlSafe;
+                var markdownToHtml, notHtmlSafe;
                 notHtmlSafe = options.notHtmlSafe;
                 return tryCatch(function () {
                     getValue(match0.slice(2, -2));
                     if (value === undefined) {
                         return match0;
                     }
-                    argList.slice(1).forEach(function (arg) {
+                    argList.slice(1).forEach(function (arg, ii, list) {
                         switch (arg) {
                         case 'alphanumeric':
                             value = value.replace((/\W/g), '_');
@@ -20476,9 +20963,6 @@ instruction\n\
                         case 'encodeURIComponent':
                             value = encodeURIComponent(value);
                             break;
-                        case 'htmlBr':
-                            htmlBr = true;
-                            break;
                         case 'jsonStringify':
                             value = JSON.stringify(value);
                             break;
@@ -20488,11 +20972,23 @@ instruction\n\
                         case 'markdownSafe':
                             value = value.replace((/`/g), '\'');
                             break;
+                        case 'markdownToHtml':
+                            markdownToHtml = true;
+                            break;
                         case 'notHtmlSafe':
                             notHtmlSafe = true;
                             break;
+                        case 'truncate':
+                            skip = ii + 1;
+                            if (value.length > list[skip]) {
+                                value = value.slice(0, list[skip] - 3).trimRight() + '...';
+                            }
+                            break;
                         // default to String.prototype[arg]()
                         default:
+                            if (ii === skip) {
+                                break;
+                            }
                             value = value[arg]();
                             break;
                         }
@@ -20504,8 +21000,8 @@ instruction\n\
                             return '&#x' + match0.charCodeAt(0).toString(16) + ';';
                         });
                     }
-                    if (htmlBr) {
-                        value = value.replace((/\n/g), '<br>');
+                    if (markdownToHtml && typeof local.marked === 'function') {
+                        value = local.marked(value);
                     }
                     return value;
                 }, 'templateRender could not render expression ' + JSON.stringify(match0) + '\n');
@@ -21422,6 +21918,55 @@ instruction\n\
             }
             return id;
         };
+
+        local.validateDocumentStyle = function () {
+        /*
+         * this function will validate the document's style
+         */
+            var tmp;
+            tmp = ['', ''];
+            Array.from(document.querySelectorAll('style')).forEach(function (element) {
+                element.innerHTML.split((/\n\/\*.*?\n/g)).forEach(function (element) {
+                    tmp[0] = '';
+                    element.replace((/(^[\w#.].*?[,{]\n)+/gm), function (match0) {
+                        local.assert(
+                            !(/^ | {2}|\S\{| $/gm).test(match0),
+                            ['validateDocumentStyle.whitespace', match0]
+                        );
+                        match0 = match0
+                            .trim()
+                            .replace((/,$/gm), '   ,')
+                            .replace((/ \{$/gm), '   {')
+                            .replace((/(^\*|^\w| \*| \w)/gm), ' $1');
+                        local.assert(
+                            tmp[0] < match0,
+                            ['validateDocumentStyle.sortError', tmp[0], match0]
+                        );
+                        tmp[0] = match0;
+                        tmp[1] = '';
+                        match0.split('\n').forEach(function (element) {
+                            local.assert(
+                                (tmp[1] || '') < element,
+                                ['validateDocumentStyle.sortError', tmp[1], element]
+                            );
+                            tmp[1] = element;
+                        });
+                    });
+                });
+            });
+            tmp = [];
+            Array.from(document.querySelectorAll('style')).map(function (element, ii) {
+                element.innerHTML.replace((/^([^\n @].*?)[,\{:].*?$/gm), function (match0, match1) {
+                    ii = document.querySelectorAll(match1).length;
+                    if (!(ii > 1)) {
+                        tmp.push(ii + ' ' + match0);
+                    }
+                });
+            });
+            tmp.sort().forEach(function (element, ii) {
+                console.error('validateDocumentStyleUnmatched ' + ii + '. ' + element);
+            });
+        };
     }());
 
 
@@ -21473,29 +22018,34 @@ instruction\n\
         local.istanbulInstrumentInPackage = local.istanbul.instrumentInPackage || local.echo;
         local.istanbulInstrumentSync = local.istanbul.instrumentSync || local.echo;
         local.jslintAndPrint = local.jslint.jslintAndPrint || local.echo;
-        local.regexpEmailValidate = new RegExp(
+        local.regexpCharsetEncodeUri = (/\w!#\$%&'\(\)\*\+,\-\.\/:;=\?@~/);
+        local.regexpCharsetEncodeUriComponent = (/\w!%'\(\)\*\-\.~/);
+        // https://github.com/chjj/marked/blob/v0.3.7/lib/marked.js#L499
+        local.regexpMatchUrl = (/\bhttps?:\/\/[^\s<]+[^<.,:;"')\]\s]/);
+        // https://www.w3.org/TR/html5/sec-forms.html#email-state-typeemail
+        local.regexpValidateEmail = new RegExp(
             '^[a-zA-Z0-9.!#$%&\'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}' +
                 '[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
         );
         // https://en.wikipedia.org/wiki/E.164
-        local.regexpPhoneValidate =
-            (/^(?:\+\d{1,3}[ \-]{0,1}){0,1}(?:\(\d{1,4}\)[ \-]{0,1}){0,1}\d[\d \-]{7,17}$/);
-        local.regexpUriComponentCharset = (/[\w\!\%\'\(\)\*\-\.\~]/);
-        local.regexpUuidValidate =
+        local.regexpValidatePhone = (/^(?:\+\d{1,3}[ \-]?)?(?:\(\d{1,4}\)[ \-]?)?\d[\d \-]{7,17}$/);
+        local.regexpValidateUuid =
             (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-        local.stringAsciiCharset =
+        local.stringCharsetAscii =
             '\x00\x01\x02\x03\x04\x05\x06\x07\b\t\n\x0b\f\r\x0e\x0f' +
             '\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f' +
             ' !"#$%&\'()*+,-./0123456789:;<=>?' +
             '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
             '`abcdefghijklmnopqrstuvwxyz{|}~\x7f';
-        local.stringUriComponentCharset = '!%\'()*-.' +
+        local.stringCharsetEncodeUri = '!#$%&\'()*+,-./' +
+            '0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~';
+        local.stringCharsetEncodeUriComponent = '!%\'()*-.' +
             '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~';
         // mock swgg
         local.swgg = local.swgg || {
             apiUpdate: local.nop,
             normalizeSwaggerJson: local.nop,
-            validateBySwaggerJson: local.nop
+            swaggerValidateJson: local.nop
         };
         local.taskOnTaskDict = {};
         local.testReport = { testPlatformList: [{
@@ -21716,36 +22266,17 @@ instruction\n\
             local.replStart();
             local.testRunServer({});
         };
-        local.cliDict['utility2.swaggerValidate'] = function () {
+        local.cliDict['utility2.swaggerValidateFile'] = function () {
         /*
-         * swagger-json-file
-         * validate swagger-json-file
+         * file/url
+         * swagger-validate file/url
          */
-            var options;
-            options = {};
-            local.onNext(options, function (error, data) {
-                switch (options.modeNext) {
-                case 1:
-                    // fetch url
-                    if ((/^(?:http|https):\/\//).test(process.argv[3])) {
-                        local.ajax({ url: process.argv[3] }, function (error, data) {
-                            options.onNext(error, data && data.responseText);
-                        });
-                        return;
-                    }
-                    // read file
-                    local.fs.readFile(process.argv[3], 'utf8', options.onNext);
-                    break;
-                case 2:
-                    // validate data
-                    local.swgg.validateBySwaggerJson({ swaggerJson: JSON.parse(data) });
-                    break;
-                default:
-                    local.assert(!error, error);
-                }
+            setTimeout(function () {
+                local.swgg.swaggerValidateFile({ file: process.argv[3] }, function (error, data) {
+                    console.error(data);
+                    process.exit(error);
+                });
             });
-            options.modeNext = 0;
-            options.onNext();
         };
         local.cliDict['utility2.testReportCreate'] = function () {
         /*
@@ -21769,7 +22300,7 @@ instruction\n\
                 switch (process.argv[2]) {
                 case '--interactive':
                 case '-i':
-                case 'utility2.swaggerValidate':
+                case 'utility2.swaggerValidateFile':
                 case 'utility2.start':
                     break;
                 default:
@@ -21777,6 +22308,7 @@ instruction\n\
                 }
             }
         }
+    // run resetValidateKeySorted js-env code
         // override assets
         [
             'assets.index.css',
@@ -21808,11 +22340,11 @@ instruction\n\
             'lib.github_crud.js',
             'lib.istanbul.js',
             'lib.jslint.js',
+            'lib.marked.js',
             'lib.sjcl.js',
             'lib.swgg.js',
             'lib.uglifyjs.js',
-            'lib.utility2.js',
-            'lib.utility2.sh'
+            'lib.utility2.js'
         ].forEach(function (key) {
             switch (key) {
             case 'lib.apidoc.js':
@@ -21820,6 +22352,7 @@ instruction\n\
             case 'lib.github_crud.js':
             case 'lib.istanbul.js':
             case 'lib.jslint.js':
+            case 'lib.marked.js':
             case 'lib.sjcl.js':
             case 'lib.uglifyjs.js':
                 local.assetsDict['/assets.utility2.' + key] = local.tryCatchReadFile(
@@ -21835,13 +22368,6 @@ instruction\n\
                     'utf8'
                 ).replace((/^#!/), '//');
                 break;
-            case 'lib.utility2.sh':
-                local.jslintAndPrintConditional(
-                    local.tryCatchReadFile(__dirname + '/' + key, 'utf8')
-                        .replace((/^ *?#!\! .*$/gm), ''),
-                    __dirname + '/' + key + '.html'
-                );
-                break;
             }
         });
         local.assetsDict['/assets.utility2.rollup.js'] = [
@@ -21852,6 +22378,7 @@ instruction\n\
             'lib.github_crud.js',
             'lib.istanbul.js',
             'lib.jslint.js',
+            'lib.marked.js',
             'lib.sjcl.js',
             'lib.uglifyjs.js',
             'lib.utility2.js',
@@ -21872,6 +22399,7 @@ instruction\n\
             case 'lib.github_crud.js':
             case 'lib.istanbul.js':
             case 'lib.jslint.js':
+            case 'lib.marked.js':
             case 'lib.sjcl.js':
             case 'lib.uglifyjs.js':
                 key = '/assets.utility2.' + key;
@@ -21954,8 +22482,13 @@ instruction\n\
             : global;
         // init utility2_rollup
         local = local.global.utility2_rollup || local;
-        // init lib
-        local.local = local.swgg = local;
+        /* istanbul ignore next */
+        if (!local) {
+            local = local.global.utility2_rollup ||
+                local.global.utility2_rollup_old ||
+                require('./assets.utility2.rollup.js');
+            local.fs = null;
+        }
         // init exports
         if (local.modeJs === 'browser') {
             local.global.utility2_swgg = local;
@@ -21968,8 +22501,9 @@ instruction\n\
             });
             module.exports = local;
             module.exports.__dirname = __dirname;
-            module.exports.module = module;
         }
+        // init lib
+        local.local = local.swgg = local;
         // init lib swgg
         local.global.swgg = local.global.utility2_swgg = local.swgg = local;
         // init lib utility2
@@ -21984,6 +22518,7 @@ instruction\n\
             }()));
         local.utility2.objectSetDefault(local, local.utility2);
         local.utility2.swgg = local;
+    // run resetValidateKeySorted js-env code
         // init assets and templates
 /* jslint-ignore-begin */
 // https://github.com/json-schema-org/json-schema-org.github.io/blob/eb4805e94c3e27932352344767d19cc4c3c3381c/draft-04/schema
@@ -22045,13 +22580,14 @@ local.swaggerErrorTypeDict = {
     semanticRequiredConsumesFormData: 'Operations with Parameters of "in: formData" must include "application/x-www-form-urlencoded" or "multipart/form-data" in their "consumes" property',
     semanticRequiredConsumesMultipartFormData: 'Operations with Parameters of "type: file" must include "multipart/form-data" in their "consumes" property',
     semanticRequiredInFormData: 'Parameters with "type: file" must have "in: formData"',
-    semanticRequiredReadOnly: 'Read only properties cannot marked as required by a schema.',
+    semanticRequiredReadOnly: 'Read only properties cannot marked as required by a schema',
     semanticRequiredTypeString: '${path} must have required string "type" param',
     semanticTypeString: '"type" should be a string',
     semanticUniqueInBodyFormDataParameter: 'Parameters cannot have both a "in: body" and "in: formData", as "formData" _will_ be the body',
     semanticUniqueInBodyFormDataOperation: 'Operations cannot have both a "body" parameter and "formData" parameter',
     semanticUniqueInBodyOperation: 'Operations must have no more than one body parameter',
     semanticUniqueParameterName: 'Operation parameters must have unique "name" + "in" properties',
+    semanticUniquePath: 'Equivalent paths are not allowed - {{prefix0}}',
     semanticUniqueOperationId: 'operationId {{prefix0}} is not unique',
     semanticUnusedDefinition: 'Definition was declared but never used in document',
     semanticUnusedNameInPath: 'Path parameter ${parameterDefinition.name} was defined but never used',
@@ -22686,6 +23222,11 @@ local.templateUiMain = '\
         id="swggApiKeyClearButton1"\n\
     >clear api-keys</button>\n\
 </div>\n\
+<div\n\
+    class="errorMessage"\n\
+    id="swggUiReloadErrorDiv1"\n\
+    style="background: none; border: 0;"\n\
+></div>\n\
 <div class="info reset">\n\
     {{#if info}}\n\
     {{#if info.x-swgg-homepage}}\n\
@@ -22694,21 +23235,27 @@ local.templateUiMain = '\
     {{#unless info.x-swgg-homepage}}\n\
     <h2>{{info.title}} ({{info.version}})</h2>\n\
     {{/if info.x-swgg-homepage}}\n\
-    {{#if info.description}}<div>{{info.description htmlBr}}</div>{{/if info.description}}\n\
-    {{#if info.x-swgg-downloadStandaloneApp}}\n\
-    <h4><a download href="{{info.x-swgg-downloadStandaloneApp}}">download standalone app</a></h4>\n\
-    {{/if info.x-swgg-downloadStandaloneApp}}\n\
+    {{#if info.x-swgg-description}}\n\
+    <div class="markdown">{{info.x-swgg-description markdownToHtml}}</div>\n\
+    {{/if info.x-swgg-description}}\n\
+    {{#if x-swgg-downloadStandaloneApp}}\n\
+    <h4><a download href="{{x-swgg-downloadStandaloneApp}}">download standalone app</a></h4>\n\
+    {{/if x-swgg-downloadStandaloneApp}}\n\
+    {{#if info.description}}\n\
+    <div class="markdown resourceDescription">{{info.description markdownToHtml}}</div>\n\
+    {{/if info.description}}\n\
     <ul>\n\
-        {{#if externalDocs}}\n\
+        {{#if externalDocs.url}}\n\
         <li>\n\
-            {{#if externalDocs.description}}\n\
-            <p>{{externalDocs.description htmlBr}}</p>\n\
-            {{/if externalDocs.description}}\n\
-            {{#if externalDocs.url}}\n\
-            <a href="{{externalDocs.url}}" target="_blank">{{externalDocs.url}}</a>\n\
-            {{/if externalDocs.url}}\n\
+            <a href="{{externalDocs.url}}" target="_blank">\n\
+                {{#if externalDocs.description}}\n\
+                {{externalDocs.description}}\n\
+                {{#unless externalDocs.description}}\n\
+                external url\n\
+                {{/if externalDocs.description}}\n\
+            </a>\n\
         </li>\n\
-        {{/if externalDocs}}\n\
+        {{/if externalDocs.url}}\n\
         {{#if info.termsOfService}}\n\
         <li><a target="_blank" href="{{info.termsOfService}}">terms of service</a></li>\n\
         {{/if info.termsOfService}}\n\
@@ -22784,9 +23331,13 @@ local.templateUiOperation = '\
     class="content uiAnimateSlide"\n\
     style="border-bottom: 0; border-top: 0; margin-bottom: 0; margin-top: 0; max-height: 0; padding-bottom: 0; padding-top: 0;"\n\
 >\n\
-    {{#if deprecated}}<h4 class="label">(warning: deprecated)</h4><br>{{/if deprecated}}\n\
+    {{#if deprecated}}\n\
+    <h4 class="errorMessage label">(warning: deprecated)</h4><br>\n\
+    {{/if deprecated}}\n\
     <h4 class="label">description</h4>\n\
-    <div class="styleColor777 tr">{{description htmlBr}}</div>\n\
+    <div class="markdown operationDescription">\n\
+    {{description markdownToHtml}}\n\
+    </div>\n\
     {{#if parameters.length}}\n\
     <h4 class="label">parameters</h4>\n\
     <div class="schemaP styleBorderBottom1px styleColor777 tr">\n\
@@ -22800,14 +23351,14 @@ local.templateUiOperation = '\
     {{/each parameters}}\n\
     {{/if parameters.length}}\n\
     <h4 class="label">response messages</h4>\n\
-    <div class="schemaResponse styleColor777 styleBorderBottom1px tr">\n\
+    <div class="schemaResponse styleBorderBottom1px styleColor777 tr">\n\
         <span class="td td1">http status code</span>\n\
         <span class="td td2">reason</span>\n\
     </div>\n\
     {{#each responseList}}\n\
     <div class="schemaResponse tr">\n\
         <span class="td td1">{{key}}</span>\n\
-        <span class="td td2">{{value.description}}</span>\n\
+        <span class="markdown td td2">{{value.description markdownToHtml}}</span>\n\
     </div>\n\
     {{/each responseList}}\n\
     <button class="onEventOperationAjax">try it out!</button>\n\
@@ -22836,7 +23387,7 @@ local.templateUiParameter = '\
     {{#if required}}<br><span style="font-weight: bold;">(required)</span>{{/if required}}\n\
     {{#if description}}\n\
     <br>\n\
-    <span class="styleColor777">{{description htmlBr}}</span>\n\
+    <span class="markdown styleColor777">{{description markdownToHtml}}</span>\n\
     {{/if description}}\n\
 </span>\n\
 <span class="td td2">{{type2}}{{#if format2}}<br>({{format2}}){{/if format2}}</span>\n\
@@ -22910,10 +23461,10 @@ local.templateUiResource = '\
     id="{{id}}"\n\
 >\n\
 <h3 class="thead">\n\
-    <span\n\
-        class="onEventResourceDisplayAction td td1"\n\
-        tabindex="0"\n\
-    >{{name}} : {{description}}</span>\n\
+    <span class="onEventResourceDisplayAction td td1" tabindex="0">\n\
+        <div class="onEventResourceDisplayAction resourceIi">{{ii}}.</div>{{name}}:\n\
+        <span class="onEventResourceDisplayAction resourceSummary">{{summary}}</span>\n\
+    </span>\n\
     <span\n\
         class="onEventResourceDisplayAction td td2"\n\
         style="border-left: 1px solid #000; margin: 0; padding-left: 20px;"\n\
@@ -22924,7 +23475,7 @@ local.templateUiResource = '\
     class="operationList uiAnimateSlide"\n\
     style="border-bottom: 0; border-top: 0; margin-bottom: 0; margin-top: 0; max-height: 0; padding-bottom: 0; padding-top: 0;"\n\
 >\n\
-    <div class="resourceDescription">{{description htmlBr}}</div>\n\
+    <div class="markdown resourceDescription">{{description markdownToHtml}}</div>\n\
 </div>\n\
 </div>\n\
 ';
@@ -22945,6 +23496,7 @@ swgg\n\
 
 
 
+    // run resetValidateKeySorted js-env code
 local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.template.html']
     .replace('assets.index.default.template.html', '')
     .replace((/<title>.*?<\/title>/), '<title>swgg</title>')
@@ -22965,8 +23517,8 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
     max-width: 100%;\n\
     padding: 0;\n\
 }\n\
-.swggUiContainer .operation > .thead:focus,\n\
 .swggUiContainer pre,\n\
+.swggUiContainer .operation > .thead:focus,\n\
 .swggUiContainer .resource > .thead > .td:focus {\n\
     outline: none;\n\
 }\n\
@@ -22991,25 +23543,6 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer textarea {\n\
     min-height: 1.5rem;\n\
 }\n\
-.swggUiContainer .multilinePlaceholderContainer {\n\
-    min-height: 10rem;\n\
-    position: relative;\n\
-}\n\
-.swggUiContainer .multilinePlaceholderPre {\n\
-    position: absolute;\n\
-    white-space: pre;\n\
-}\n\
-.swggUiContainer .multilinePlaceholderTextarea {\n\
-    position: absolute;\n\
-}\n\
-.swggUiContainer .operation > .thead > .td1 {\n\
-    text-align: center;\n\
-    width: 2rem;\n\
-}\n\
-.swggUiContainer .operation > .thead > .td2 {\n\
-    text-align: center;\n\
-    width: 5rem;\n\
-}\n\
 .swggUiContainer pre,\n\
 .swggUiContainer textarea {\n\
     font-family: Menlo, Monaco, Consolas, Courier New, monospace;\n\
@@ -23023,15 +23556,44 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
     overflow-wrap: break-word;\n\
     white-space: pre-wrap;\n\
 }\n\
+.swggUiContainer .markdown pre {\n\
+    max-height: none;\n\
+}\n\
+\n\
+.swggUiContainer .multilinePlaceholderContainer {\n\
+    min-height: 10rem;\n\
+    position: relative;\n\
+}\n\
+.swggUiContainer .multilinePlaceholderPre {\n\
+    position: absolute;\n\
+    white-space: pre;\n\
+}\n\
+.swggUiContainer .multilinePlaceholderTextarea {\n\
+    position: absolute;\n\
+}\n\
+.swggUiContainer .operation > .thead > .td1 {\n\
+    text-align: left;\n\
+    width: 2rem;\n\
+}\n\
+.swggUiContainer .operation > .thead > .td2 {\n\
+    text-align: center;\n\
+    width: 5rem;\n\
+}\n\
+.swggUiContainer .resourceIi {\n\
+    min-width: 3rem;\n\
+}\n\
+.swggUiContainer .resourceSummary {\n\
+    font-weight: lighter;\n\
+}\n\
 .swggUiContainer .responseBody,\n\
 .swggUiContainer .responseHeaders,\n\
 .swggUiContainer .responseStatusCode {\n\
     font-weight: bold;\n\
 }\n\
 .swggUiContainer .schemaP pre,\n\
-.swggUiContainer .schemaP .multilinePlaceholderContainer,\n\
 .swggUiContainer .schemaP select[multiple],\n\
-.swggUiContainer .schemaP textarea {\n\
+.swggUiContainer .schemaP textarea,\n\
+.swggUiContainer .schemaP .multilinePlaceholderContainer {\n\
     height: 10rem;\n\
 }\n\
 .swggUiContainer .schemaP > .td3 {\n\
@@ -23041,16 +23603,11 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
     overflow: auto;\n\
     word-wrap: break-word;\n\
 }\n\
-.swggUiContainer .td div,\n\
 .swggUiContainer .td input,\n\
 .swggUiContainer .td pre,\n\
 .swggUiContainer .td select,\n\
 .swggUiContainer .td textarea {\n\
     width: 100%;\n\
-}\n\
-.swggUiContainer .thead,\n\
-.swggUiContainer .tr {\n\
-    display: flex;\n\
 }\n\
 .swggUiContainer > .thead > .td1 {\n\
     font-size: x-large;\n\
@@ -23064,6 +23621,10 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer button,\n\
 .swggUiContainer .resourceDescription {\n\
     background: #373;\n\
+}\n\
+.swggUiContainer pre,\n\
+.swggUiContainer .operationDescription {\n\
+    background: #ddd;\n\
 }\n\
 .swggUiContainer .methodDELETE {\n\
     background: #b07;\n\
@@ -23092,8 +23653,8 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer .operation {\n\
     background: #dfd;\n\
 }\n\
-.swggUiContainer pre {\n\
-    background: #ddd;\n\
+.swggUiContainer .resourceDescription pre {\n\
+    background: #777;\n\
 }\n\
 .swggUiContainer > .thead {\n\
     background: #7b5;\n\
@@ -23106,7 +23667,7 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer pre,\n\
 .swggUiContainer select,\n\
 .swggUiContainer textarea {\n\
-    border: 1px solid #bbb;\n\
+    border: 1px solid #999;\n\
 }\n\
 .swggUiContainer .resource:first-child {\n\
     border-top: 1px solid #777;\n\
@@ -23129,13 +23690,30 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
     color: #fff;\n\
 }\n\
 .swggUiContainer .errorMessage {\n\
-    color: #b00;\n\
+    color: #c00;\n\
 }\n\
 .swggUiContainer .multilinePlaceholderPre {\n\
     color: #999;\n\
 }\n\
+.swggUiContainer .resourceDescription a {\n\
+    color: #7d7;\n\
+}\n\
+.swggUiContainer .resourceDescription strong {\n\
+    color: #7f7;\n\
+}\n\
+.swggUiContainer .resourceDescription > code {\n\
+    color: #ddf;\n\
+}\n\
 .swggUiContainer .styleColor777 {\n\
     color: #777;\n\
+}\n\
+/* display */\n\
+.swggUiContainer .onEventResourceDisplayAction {\n\
+    display: inline-block;\n\
+}\n\
+.swggUiContainer .thead,\n\
+.swggUiContainer .tr {\n\
+    display: flex;\n\
 }\n\
 /* flex */\n\
 .swggUiContainer .operation > .thead > .td3 {\n\
@@ -23177,21 +23755,26 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 }\n\
 .swggUiContainer audio,\n\
 .swggUiContainer img,\n\
-.swggUiContainer .operation .thead,\n\
 .swggUiContainer option,\n\
+.swggUiContainer video,\n\
+.swggUiContainer .operation .thead,\n\
 .swggUiContainer .responseBody,\n\
 .swggUiContainer .responseMedia,\n\
 .swggUiContainer .td,\n\
-.swggUiContainer video {\n\
+.swggUiContainer .td .onEventResourceDisplayAction {\n\
     margin-bottom: 0;\n\
 }\n\
-.swggUiContainer > .info > ul,\n\
+.swggUiContainer ul,\n\
 .swggUiContainer .operation > .thead > .td1,\n\
 .swggUiContainer .td {\n\
     margin-left: 20px;\n\
 }\n\
 .swggUiContainer .label {\n\
     margin-bottom: 1px;\n\
+}\n\
+.swggUiContainer .markdown ol,\n\
+.swggUiContainer .markdown ul {\n\
+    margin-left: 20px;\n\
 }\n\
 .swggUiContainer .onEventOperationAjax,\n\
 .swggUiContainer .schemaP {\n\
@@ -23200,6 +23783,9 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer .operation button {\n\
     margin-bottom: 50px;\n\
     margin-top: 40px;\n\
+}\n\
+.swggUiContainer .operation > .thead > .td4 {\n\
+    margin-right: 20px;\n\
 }\n\
 .swggUiContainer .td:first-child {\n\
     margin-left: 0;\n\
@@ -23212,40 +23798,46 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 .swggUiContainer input {\n\
     padding: 0 5px;\n\
 }\n\
+.swggUiContainer pre,\n\
+.swggUiContainer textarea {\n\
+    padding: 5px;\n\
+}\n\
 .swggUiContainer .operation > .content {\n\
     padding: 20px;\n\
 }\n\
 .swggUiContainer .operation > .thead > .td {\n\
     padding: 10px 0;\n\
 }\n\
-.swggUiContainer pre,\n\
-.swggUiContainer textarea {\n\
-    padding: 5px;\n\
+.swggUiContainer .operationDescription {\n\
+    padding: 15px 10px 1px 10px;\n\
 }\n\
 .swggUiContainer .resource:first-child {\n\
     padding-top: 10px;\n\
 }\n\
 .swggUiContainer .resourceDescription {\n\
-    padding: 10px 20px;\n\
+    padding: 20px 20px 10px 20px;\n\
 }\n\
 .swggUiContainer > .thead > .td1 {\n\
     padding-left: 40px;\n\
-    padding-top: 5px;\n\
+    padding-top: 6px;\n\
 }\n\
 \n\
 \n\
 \n\
 /* hover */\n\
+.swggUiContainer a:hover,\n\
+.swggUiContainer > .thead > .td1:hover {\n\
+    color: #33d;\n\
+}\n\
 .swggUiContainer button:hover {\n\
     background: #33d;\n\
 }\n\
-.swggUiContainer .operation > .thead:hover {\n\
+.swggUiContainer .operation > .thead:hover,\n\
+.swggUiContainer .resource > .thead > .td:hover {\n\
     background: #bbf;\n\
 }\n\
-.swggUiContainer a:hover,\n\
-.swggUiContainer .resource > .thead > .td:hover,\n\
-.swggUiContainer > .thead > .td1:hover {\n\
-    color: #33d;\n\
+.swggUiContainer .resourceDescription a:hover {\n\
+    color: #7f7;\n\
 }\n\
 \n\
 \n\
@@ -23283,11 +23875,11 @@ local.assetsDict['/assets.swgg.html'] = local.assetsDict['/assets.index.default.
 \n\
 /* .hasError */\n\
 .swggUiContainer button.hasError {\n\
-    background: #b00;\n\
+    background: #c00;\n\
 }\n\
 .swggUiContainer input.hasError,\n\
 .swggUiContainer select.hasError {\n\
-    border: 5px solid #b00;\n\
+    border: 5px solid #c00;\n\
 }\n\
 .swggUiContainer pre.hasError,\n\
 .swggUiContainer textarea.hasError {\n\
@@ -23322,7 +23914,10 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
         "assets.swgg.swagger.json";\n\
 </script>\n\
 <script src="assets.utility2.rollup.js"></script>\n\
-<script>window.swgg.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });</script>\n\
+<script>\n\
+window.local = window.swgg;\n\
+window.local.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });\n\
+</script>\n\
 </body>\n\
 </html>\n\
 ');
@@ -23472,12 +24067,14 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     'Bearer ' + options.jwtEncrypted;
             }
             // init url
-            options.url = (((local.normalizeValue('list', self.schemes ||
-                local.swaggerJson.schemes)[0] ||
-                local.urlParse('').protocol.slice(0, -1)) + '://' +
-                (self['x-swgg-host'] || local.swaggerJson.host || local.urlParse('').host) +
-                local.swaggerJsonBasePath) + options.inPath + '?' + options.inQuery.slice(1))
-                .replace((/\?$/), '');
+            options.url = '';
+            options.url += (self['x-swgg-schemes'] || local.swaggerJson.schemes || [])[0] ||
+                local.urlParse('').protocol.slice(0, -1);
+            options.url += '://';
+            options.url += self['x-swgg-host'] || local.swaggerJson.host || local.urlParse('').host;
+            options.url += local.swaggerJsonBasePath;
+            options.url += options.inPath + '?' + options.inQuery.slice(1);
+            options.url = options.url.replace((/\?$/), '');
             if (options.error || options.modeValidate) {
                 onError(options.error);
                 return;
@@ -23496,34 +24093,25 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             });
         };
 
-        local.apiUpdate = function (options, onError) {
+        local.apiUpdate = function (swaggerJson) {
         /*
          * this function will update the swagger-api dict of api-calls
          */
             var tmp;
-            options = options || {};
-            // fetch swagger.json file
-            if (options.modeAjax) {
-                local.ajax(options, function (error, xhr) {
-                    // JSON.parse swagger.json string
-                    local.tryCatchOnError(function () {
-                        tmp = JSON.parse(xhr.responseText);
-                    }, local.nop);
-                    error = error || local.utility2._debugTryCatchError;
-                    // reset state
-                    local.apiDict = local.swaggerJson = null;
-                    // apiUpdate swagger.json object
-                    local.apiUpdate(!error && tmp, function (error2, data) {
-                        onError(error || error2, data);
-                    });
-                });
-                return;
-            }
-            local.tryCatchOnError(function () {
-                options = JSON.parse(options.utility2.assetsDict['/assets.swgg.swagger.json']);
-            }, local.nop);
-            // normalize options
-            options = local.normalizeSwaggerJson(options);
+            swaggerJson = swaggerJson || {};
+            // normalize swaggerJson
+            swaggerJson = local.normalizeSwaggerJson(swaggerJson, {
+                objectSetDescription: function (dict) {
+                    if (typeof dict === 'object' && dict && !dict.$ref) {
+                        if (Array.isArray(dict['x-swgg-descriptionLineList'])) {
+                            dict.description = dict['x-swgg-descriptionLineList'].join('\n');
+                        }
+                        if (!(dict === swaggerJson.externalDocs || dict === swaggerJson.info)) {
+                            dict.description = dict.description || 'no description';
+                        }
+                    }
+                }
+            });
             // init apiDict
             local.apiDict = local.apiDict || {};
             // init swaggerJson
@@ -23626,7 +24214,6 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     }
                 },
                 "info": {
-                    "description": "web-demo of swagger-ui server",
                     "title": "swgg api",
                     "version": "0.0.1"
                 },
@@ -23637,7 +24224,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             };
             // save tags
             tmp = {};
-            [local.swaggerJson.tags, options.tags].forEach(function (tagList) {
+            [local.swaggerJson.tags, swaggerJson.tags].forEach(function (tagList) {
                 tagList.forEach(function (tag) {
                     tmp[tag.name] = local.objectSetOverride(tmp[tag.name], tag);
                 });
@@ -23645,21 +24232,21 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             tmp = Object.keys(tmp).sort().map(function (key) {
                 return tmp[key];
             });
-            // merge options into swaggerJson
-            options = local.objectSetOverride(local.swaggerJson, options, 10);
+            // merge swaggerJson into local.swaggerJson
+            swaggerJson = local.objectSetOverride(local.swaggerJson, swaggerJson, 10);
             // restore tags
             local.swaggerJson.tags = tmp;
             // init swaggerJsonBasePath
             local.swaggerJsonBasePath = local.swaggerJson.basePath === '/'
                 ? ''
                 : local.swaggerJson.basePath;
-            Object.keys(options.definitions).forEach(function (schemaName) {
-                tmp = options.definitions[schemaName] = local.jsonCopy(
+            Object.keys(swaggerJson.definitions).forEach(function (schemaName) {
+                tmp = swaggerJson.definitions[schemaName] = local.jsonCopy(
                     local.validateBySwaggerSchema({
                         // dereference definition
                         modeDereference: true,
                         prefix: ['swaggerJson', 'definitions', schemaName],
-                        schema: options.definitions[schemaName],
+                        schema: swaggerJson.definitions[schemaName],
                         swaggerJson: local.swaggerJson
                     })
                 );
@@ -23672,13 +24259,13 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                         swaggerJson: local.swaggerJson
                     })), 2);
                 });
-                delete tmp.allOf;
+                tmp.allOf = undefined;
             });
             // init apiDict from paths
-            Object.keys(options.paths).forEach(function (path) {
-                Object.keys(options.paths[path]).forEach(function (method) {
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
                     var self;
-                    self = local.jsonCopy(options.paths[path][method]);
+                    self = local.jsonCopy(swaggerJson.paths[path][method]);
                     self._method = method.toUpperCase();
                     self._path = path;
                     tmp = 'operationId.' + self.operationId;
@@ -23686,11 +24273,11 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 });
             });
             // init apiDict from x-swgg-apiDict
-            Object.keys(options['x-swgg-apiDict'] || {}).forEach(function (key) {
+            Object.keys(swaggerJson['x-swgg-apiDict'] || {}).forEach(function (key) {
                 // init self
                 local.apiDict[key] = local.objectSetOverride(
                     local.apiDict[key],
-                    local.jsonCopy(options['x-swgg-apiDict'][key])
+                    local.jsonCopy(swaggerJson['x-swgg-apiDict'][key])
                 );
             });
             // init apiDict
@@ -23742,9 +24329,11 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     tags: []
                 });
                 // init _consumes0
-                tmp = self['x-swgg-consumes0'];
+                tmp = self['x-swgg-consumes0'] || (self.consumes && self.consumes[0]);
                 self.parameters.some(function (schemaP) {
-                    tmp = tmp || (schemaP.in === 'formData' && 'application/x-www-form-urlencoded');
+                    tmp = tmp ||
+                        (schemaP.in === 'formData' && 'application/x-www-form-urlencoded') ||
+                        (schemaP.in === 'body' && schemaP.schema.type === 'string' && 'text/plain');
                     return tmp;
                 });
                 self._consumes0 = tmp || 'application/json';
@@ -23758,16 +24347,16 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                             match0 = match1;
                             local.objectSetDefault(
                                 schemaP,
-                                local.jsonCopy(options.parameters[match0])
+                                local.jsonCopy(swaggerJson.parameters[match0])
                             );
                             schemaP.$ref = undefined;
                         }
                     );
                     // init _idName.format and _idName.type
                     if (self._schemaName && schemaP.name === self._idName) {
-                        schemaP.format = options.definitions[self._schemaName]
+                        schemaP.format = swaggerJson.definitions[self._schemaName]
                             .properties[self._idBackend].format;
-                        schemaP.type = local.schemaPType(options.definitions[self._schemaName]
+                        schemaP.type = local.schemaPType(swaggerJson.definitions[self._schemaName]
                             .properties[self._idBackend]);
                     }
                     // init _schemaPDict
@@ -23795,13 +24384,13 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 self = local.apiDict[key.join('.')] = local.apiDict[self._methodPath] =
                     local.jsonCopy(self);
                 // init ajax
-                self.ajax = function (options, onError) {
-                    return local.apiAjax(self, options, onError);
+                self.ajax = function (swaggerJson, onError) {
+                    return local.apiAjax(self, swaggerJson, onError);
                 };
                 self._ajaxToString = self.ajax.toString()
                     .replace('{', ('{\n' +
                         '/*\n' +
-                        ' * this function will make the api-call ' +
+                        ' * this function will run the api-call ' +
                         JSON.stringify(self._methodPath) + '\n' +
                         ' * example usage:' + ('\n' +
                         'swgg.apiDict[' + JSON.stringify(key.join('.')) + '].ajax(' +
@@ -23825,19 +24414,19 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 tmp = local.jsonCopy(self);
                 Object.keys(tmp).forEach(function (key) {
                     if (key[0] === '_') {
-                        delete tmp[key];
+                        tmp[key] = undefined;
                     }
                 });
                 // update paths
-                local.objectSetOverride(options, local.objectLiteralize({
+                local.objectSetOverride(swaggerJson, local.objectLiteralize({
                     paths: { '$[]': [self._path, { '$[]': [self._method.toLowerCase(), tmp] }] }
                 }), 3);
             });
             // normalize swaggerJson
-            local.swaggerJson = JSON.parse(local.jsonStringifyOrdered(options));
+            local.swaggerJson = JSON.parse(local.jsonStringifyOrdered(swaggerJson));
             // try to validate swaggerJson
             local.tryCatchOnError(function () {
-                local.validateBySwaggerJson({ swaggerJson: local.swaggerJson });
+                local.swaggerValidateJson(local.swaggerJson);
             }, local.onErrorDefault);
             // init corsForwardProxyHost
             local.corsForwardProxyHost = local.corsForwardProxyHost ||
@@ -23846,7 +24435,6 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             local.assetsDict['/assets.swgg.swagger.server.json'] = JSON.stringify(
                 local.swaggerJson
             );
-            local.setTimeoutOnError(onError, 0, null, options);
         };
 
         local.dbFieldRandomCreate = function (options) {
@@ -23995,6 +24583,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 value = local.dbRowRandomCreate({
                     depth: depth - 1,
                     modeNotRandom: options.modeNotRandom,
+                    prefix: ['schema<' + JSON.stringify(schemaP) + '>'],
                     schema: schemaP
                 });
                 break;
@@ -24019,11 +24608,11 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
          */
             var ii, dbRow, properties;
             dbRow = {};
-            options = local.objectSetDefault(options, { override: local.nop });
+            options = local.objectSetDefault(options, { override: local.nop, prefix: ['dbRow'] });
             properties = local.validateBySwaggerSchema({
                 // dereference property
                 modeDereference: true,
-                prefix: ['dbRow'],
+                prefix: options.prefix,
                 schema: options.schema,
                 swaggerJson: local.swaggerJson
             });
@@ -24040,7 +24629,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     schemaP: local.validateBySwaggerSchema({
                         // dereference property
                         modeDereference: true,
-                        prefix: ['dbRow', key],
+                        prefix: options.prefix.concat([key]),
                         schema: properties[key],
                         swaggerJson: local.swaggerJson
                     })
@@ -24051,11 +24640,11 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             local.tryCatchOnError(function () {
                 local.validateBySwaggerSchema({
                     data: dbRow,
-                    prefix: ['dbRow'],
+                    prefix: options.prefix,
                     schema: options.schema,
                     swaggerJson: local.swaggerJson
                 });
-            }, console.error);
+            }, local.onErrorDefault);
             return dbRow;
         };
 
@@ -24218,15 +24807,15 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                         break;
                     case 'crudSetOneById':
                         // replace idName with idBackend in body
-                        delete crud.body.id;
-                        delete crud.body[crud.idName];
+                        crud.body.id = undefined;
+                        crud.body[crud.idName] = undefined;
                         crud.body[crud.idBackend] = crud.data[crud.idName];
                         crud.dbTable.crudSetOneById(crud.body, options.onNext);
                         break;
                     case 'crudUpdateOneById':
                         // replace idName with idBackend in body
-                        delete crud.body.id;
-                        delete crud.body[crud.idName];
+                        crud.body.id = undefined;
+                        crud.body[crud.idName] = undefined;
                         crud.body[crud.idBackend] = crud.data[crud.idName];
                         crud.dbTable.crudUpdateOneById(crud.body, options.onNext);
                         break;
@@ -24349,7 +24938,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                         break;
                     case 'fileUploadManyByForm':
                         options.onNext(null, data.map(function (element) {
-                            delete element.fileBlob;
+                            element.fileBlob = undefined;
                             return element;
                         }));
                         break;
@@ -24715,35 +25304,107 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             options.onNext();
         };
 
-        local.normalizeSwaggerJson = function (options) {
+        local.normalizeSwaggerJson = function (swaggerJson, options) {
         /*
          * this function will normalize swaggerJson and filter $npm_package_swggTags0
          */
-            var tmp;
-            local.objectSetDefault(options, { paths: {}, tags: [] });
-            // auto-create operationId from path
-            Object.keys(options.paths).forEach(function (path) {
-                Object.keys(options.paths[path]).forEach(function (method) {
-                    tmp = options.paths[path][method];
-                    // auto-create operationId
-                    if (options['x-swgg-operationIdFromPath'] ||
+            var pathDict, tmp;
+            options = local.objectSetDefault(options, {
+                objectSetDescription: function (dict) {
+                    if (dict &&
+                            dict.description &&
+                            Array.isArray(dict['x-swgg-descriptionLineList'])) {
+                        delete dict.description;
+                    }
+                }
+            });
+            local.objectSetDefault(swaggerJson, { paths: {}, tags: [] });
+            // fix error - semanticUniquePath
+            pathDict = {};
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                tmp = path.replace((/\{.*?\}/g), '{}');
+                pathDict[tmp] = pathDict[tmp] || {};
+                pathDict[tmp][path] = true;
+            });
+            Object.keys(pathDict).forEach(function (key) {
+                Object.keys(pathDict[key]).sort().forEach(function (path, ii) {
+                    if (!(ii && swaggerJson['x-swgg-fixErrorSemanticUniquePath'])) {
+                        return;
+                    }
+                    swaggerJson.paths[path + '#' + ii] = swaggerJson.paths[path];
+                    delete swaggerJson.paths[path];
+                });
+            });
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
+                    tmp = swaggerJson.paths[path][method];
+                    // auto-create operationId from path
+                    if (swaggerJson['x-swgg-operationIdFromPath'] ||
                             tmp['x-swgg-operationIdFromPath'] ||
                             !tmp.operationId) {
-                        tmp.operationId = encodeURIComponent(path + ' ' + method.toUpperCase())
-                            .replace((/[^\w\-.]/g), '_');
+                        tmp.operationId = local.operationIdFromAjax({ method: method, url: path });
                     }
+                    // normalize parameter.required
+                    (tmp.parameters || []).forEach(function (schemaP) {
+                        if (schemaP.required === false) {
+                            delete schemaP.required;
+                        }
+                    });
+                });
+            });
+            // override tag.description with x-swgg-tags0-override
+            if (swaggerJson['x-swgg-tags0-override']) {
+                swaggerJson.tags.forEach(function (tag) {
+                    tmp = local.objectSetDefault(swaggerJson['x-swgg-tags0-override'][tag.name], {
+                        description: tag.description,
+                        'x-swgg-descriptionLineList': tag['x-swgg-descriptionLineList']
+                    });
+                    tag.description = tmp.description;
+                    tag['x-swgg-descriptionLineList'] = tmp['x-swgg-descriptionLineList'];
+                    // objectSetDescription
+                    options.objectSetDescription(tmp);
+                    options.objectSetDescription(tag);
+                });
+            }
+            // apply options.objectSetDescription
+            [swaggerJson.externalDocs, swaggerJson.info].forEach(options.objectSetDescription);
+            [
+                swaggerJson.definitions,
+                swaggerJson.parameters,
+                swaggerJson.responses
+            ].forEach(function (dict) {
+                Object.keys(dict || {}).forEach(function (key) {
+                    tmp = dict[key];
+                    if (dict === swaggerJson.definitions) {
+                        tmp = tmp.properties || {};
+                        Object.keys(tmp).forEach(function (key) {
+                            options.objectSetDescription(tmp[key]);
+                        });
+                        return;
+                    }
+                    options.objectSetDescription(tmp);
+                });
+            });
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
+                    tmp = swaggerJson.paths[path][method];
+                    options.objectSetDescription(tmp);
+                    (tmp.parameters || []).forEach(options.objectSetDescription);
+                    Object.keys(tmp.responses || {}).forEach(function (key) {
+                        options.objectSetDescription(tmp.responses[key]);
+                    });
                 });
             });
             if (!local.env.npm_package_swggTags0 ||
                     (/-all$/).test(local.env.npm_package_swggTags0)) {
-                return options;
+                return swaggerJson;
             }
-            // override options with x-swgg-tags0-override
-            local.objectSetOverride(options, options['x-swgg-tags0-override'] &&
-                options['x-swgg-tags0-override'][local.env.npm_package_swggTags0], 10);
+            // override swaggerJson with x-swgg-tags0-override
+            local.objectSetOverride(swaggerJson, swaggerJson['x-swgg-tags0-override'] &&
+                swaggerJson['x-swgg-tags0-override'][local.env.npm_package_swggTags0], 10);
             // filter $npm_package_swggTags0 - definitions and parameters
-            ['definitions', 'parameters'].forEach(function (schema) {
-                schema = options[schema] || {};
+            ['definitions', 'parameters', 'responses'].forEach(function (schema) {
+                schema = swaggerJson[schema] || {};
                 Object.keys(schema).forEach(function (key) {
                     if (schema[key]['x-swgg-tags0'] &&
                             schema[key]['x-swgg-tags0'] !== 'all' &&
@@ -24753,27 +25414,27 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 });
             });
             // filter $npm_package_swggTags0 - paths
-            Object.keys(options.paths).forEach(function (path) {
-                Object.keys(options.paths[path]).forEach(function (method) {
-                    tmp = options.paths[path][method];
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
+                    tmp = swaggerJson.paths[path][method];
                     if (tmp['x-swgg-tags0'] &&
                             tmp['x-swgg-tags0'] !== 'all' &&
                             tmp['x-swgg-tags0'] !== local.env.npm_package_swggTags0) {
-                        delete options.paths[path][method];
+                        delete swaggerJson.paths[path][method];
                         return;
                     }
                 });
-                if (!Object.keys(options.paths[path]).length) {
-                    delete options.paths[path];
+                if (!Object.keys(swaggerJson.paths[path]).length) {
+                    delete swaggerJson.paths[path];
                 }
             });
             // filter $npm_package_swggTags0 - tags
-            options.tags = options.tags.filter(function (tag) {
+            swaggerJson.tags = swaggerJson.tags.filter(function (tag) {
                 return !tag['x-swgg-tags0'] ||
                     tmp['x-swgg-tags0'] === 'all' ||
                     tag['x-swgg-tags0'] === local.env.npm_package_swggTags0;
             });
-            return options;
+            return swaggerJson;
         };
 
         local.normalizeSwaggerParamDict = function (options) {
@@ -24911,6 +25572,18 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             };
         };
 
+        local.operationIdFromAjax = function (options) {
+        /*
+         * this function will create a sortable operationId
+         * from the given ajax-options
+         */
+            var urlParsed;
+            urlParsed = local.urlParseWithBraket(options.url);
+            return encodeURIComponent(
+                urlParsed.pathname + urlParsed.hash + ' ' + options.method.toUpperCase()
+            ).replace((/[^\w\-.]/g), '_');
+        };
+
         local.schemaPItems = function (schemaP) {
         /*
          * this function will return schemaP.items
@@ -24956,11 +25629,378 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             })(error, data, meta);
         };
 
+        local.swaggerJsonFromAjax = function (swaggerJson, options) {
+        /*
+         * this function will update swaggerJson
+         * with definitions and paths created from the given ajax-options
+         */
+            var data, isArray, operation, type, upsertSchemaP, urlParsed;
+            upsertSchemaP = function (schemaP) {
+                if (!operation.parameters.some(function (element) {
+                        if (element.in === schemaP.in && element.name === schemaP.name) {
+                            ['default', 'items', 'schema'].forEach(function (key) {
+                                if (!local.isNullOrUndefined(schemaP[key])) {
+                                    element[key] = schemaP[key];
+                                }
+                            });
+                            return true;
+                        }
+                    })) {
+                    operation.parameters.push(schemaP);
+                }
+            };
+            // init swaggerJson
+            swaggerJson = local.objectSetDefault(swaggerJson, {
+                basePath: '/',
+                definitions: {},
+                info: { title: '', version: '' },
+                paths: {},
+                swagger: '2.0'
+            });
+            // init options
+            options = local.objectSetDefault(options, { headers: {}, method: 'GET' });
+            // init urlParsed
+            urlParsed = local.urlParseWithBraket(options.url);
+            // init operation
+            operation = {
+                operationId: options.operationId || local.operationIdFromAjax(options),
+                parameters: [],
+                responses: { default: { description: 'default response' } },
+                tags: options.tags || ['undefined'],
+                'x-swgg-tags0': options['x-swgg-tags0']
+            };
+            if ((/^(?:http|https):\/\//).test(options.url)) {
+                operation['x-swgg-host'] = urlParsed.host;
+                operation['x-swgg-schemes'] = [urlParsed.protocol.slice(0, -1)];
+            }
+            local.objectSetDefault(swaggerJson, local.objectLiteralize({ paths: {
+                '$[]': [urlParsed.pathname + urlParsed.hash, {
+                    '$[]': [options.method.toLowerCase(), operation]
+                }]
+            } }), 4);
+            // init param in header
+            Object.keys(options.headers).forEach(function (key) {
+                upsertSchemaP({
+                    default: options.headers[key],
+                    in: 'header',
+                    name: key,
+                    type: 'string'
+                });
+            });
+            // init param in path
+            urlParsed.pathname.replace((/\{[^}]+?\}/g), function (match0) {
+                match0 = match0.slice(1, -1);
+                upsertSchemaP({
+                    default: match0,
+                    in: 'path',
+                    name: match0,
+                    required: true,
+                    type: 'string'
+                });
+            });
+            // init param in query
+            Object.keys(urlParsed.query).forEach(function (key) {
+                upsertSchemaP({
+                    default: urlParsed.query[key],
+                    in: 'query',
+                    name: key,
+                    type: 'string'
+                });
+            });
+            data = options.data;
+            if (!data) {
+                return swaggerJson;
+            }
+            // init param in body - text-data
+            upsertSchemaP({
+                in: 'body',
+                name: 'body',
+                schema: { type: 'string' }
+            });
+            local.tryCatchOnError(function () {
+                data = JSON.parse(data);
+            }, local.nop);
+            if (typeof data !== 'object') {
+                return swaggerJson;
+            }
+            // init param in body - json-data
+            isArray = Array.isArray(data);
+            type = local.swaggerJsonFromPostBody(swaggerJson, {
+                data: isArray
+                    ? data[0]
+                    : data,
+                depth: 2,
+                key: 'body',
+                prefix: operation.operationId,
+                'x-swgg-tags0': options['x-swgg-tags0']
+            });
+            upsertSchemaP({
+                in: 'body',
+                name: 'body',
+                schema: isArray
+                    ? { items: type, type: 'array' }
+                    : type
+            });
+            return swaggerJson;
+        };
+
+        local.swaggerJsonFromCurl = function (swaggerJson, text) {
+        /*
+         * this function will update swaggerJson
+         * with definitions and paths created from the given curl-command-text
+         */
+            var arg, argList, doubleBackslash, quote, options;
+            arg = '';
+            argList = [];
+            doubleBackslash = local.stringUniqueKey(text);
+            // parse doubleBackslash
+            text = text.replace((/\\\\/g), doubleBackslash);
+            // parse line-continuation
+            text = text.replace((/\\\n/g), '');
+            // parse quotes
+            text.replace((/(\s*?)(\S+)/g), function (match0, line, word) {
+                line = match0;
+                word.replace((/^(["']?).*?(?:\\")?(["']?)$/), function (quote1, match1, quote2) {
+                    quote1 = match1;
+                    if (quote) {
+                        arg += line;
+                    } else {
+                        arg = word;
+                        quote = quote1;
+                    }
+                    if (!quote || quote === quote2) {
+                        switch (quote) {
+                        // parse escapes in double-quotes
+                        // https://www.gnu.org/software/bash/manual/html_node/Double-Quotes.html
+                        case '"':
+                            arg = arg.replace((/\\([$`"\n])/g), '$1');
+                            arg = arg.slice(1, -1);
+                            break;
+                        // parse escapes in single-quotes
+                        case "'":
+                            arg = arg.replace((/'"'"'/g), "'");
+                            arg = arg.slice(1, -1);
+                            break;
+                        }
+                        argList.push(arg);
+                        arg = '';
+                        quote = '';
+                    }
+                });
+            });
+            // un-parse doubleBackslash
+            argList = argList.map(function (arg) {
+                return arg.replace(new RegExp(doubleBackslash, 'g'), '\\\\');
+            });
+            argList.push('curl');
+            argList.forEach(function (arg, ii) {
+                switch (argList[ii - 1]) {
+                case '--data':
+                case '--data-ascii':
+                case '--data-binary':
+                case '--data-raw':
+                case '-d':
+                    options.data = arg;
+                    return;
+                case '--request':
+                case '-X':
+                    options.method = arg;
+                    return;
+                case '--header':
+                case '-H':
+                    arg = arg.split(':');
+                    arg[1] = arg.slice(1).join(':').trim();
+                    options.headers[arg[0].toLowerCase()] = arg[1];
+                    return;
+                }
+                if (arg === 'curl') {
+                    if (options) {
+                        options.url = options.url || argList[ii - 1];
+                        swaggerJson = local.swaggerJsonFromAjax(swaggerJson, options);
+                    }
+                    options = { headers: {}, method: 'GET' };
+                }
+                if ((/^(?:http|https):\/\//).test(arg)) {
+                    options.url = arg;
+                }
+            });
+            return swaggerJson;
+        };
+
+        local.swaggerJsonFromPostBody = function (swaggerJson, options) {
+        /*
+         * this function will update swaggerJson
+         * with definitions created from the post-body-data
+         */
+            var definition, isArray, prefix, schemaP, type, value;
+            prefix = options.prefix + '.' + encodeURIComponent(options.key);
+            definition = swaggerJson.definitions[prefix] = {
+                properties: {},
+                'x-swgg-tags0': options['x-swgg-tags0']
+            };
+            Object.keys(options.data).forEach(function (key) {
+                value = options.data[key];
+                isArray = Array.isArray(value);
+                if (isArray) {
+                    value = value[0];
+                }
+                type = local.isNullOrUndefined(value)
+                    ? 'string'
+                    : typeof value;
+                schemaP = definition.properties[key] = isArray
+                    ? { default: options.data[key], items: { type: type }, type: 'array' }
+                    : { default: value, type: type };
+                if (!(type === 'object' && options.depth > 1)) {
+                    return;
+                }
+                // recurse
+                type = local.swaggerJsonFromPostBody(swaggerJson, {
+                    data: value,
+                    depth: options.depth - 1,
+                    key: key,
+                    prefix: prefix,
+                    'x-swgg-tags0': options['x-swgg-tags0']
+                });
+                if (isArray) {
+                    schemaP.items = type;
+                } else {
+                    definition.properties[key] = type;
+                }
+            });
+            return { $ref: '#/definitions/' + prefix };
+        };
+
+        local.swaggerValidateFile = function (options, onError) {
+        /*
+         * this function will swagger-validate the json-file options.file
+         */
+            local.onNext(options, function (error, data) {
+                switch (options.modeNext) {
+                case 1:
+                    if (typeof options.data === 'string') {
+                        options.onNext(null, options.data);
+                        return;
+                    }
+                    // fetch url
+                    if ((/^(?:http|https):\/\//).test(options.file)) {
+                        local.ajax({ url: options.file }, function (error, data) {
+                            options.onNext(error, data && data.responseText);
+                        });
+                        return;
+                    }
+                    // read file
+                    local.fs.readFile(options.file, 'utf8', options.onNext);
+                    break;
+                case 2:
+                    // jslint
+                    local.jslint.jslintAndPrint(data, options.file);
+                    local.assert(
+                        !local.jslint.errorText,
+                        local.jslint.errorText.replace((/\u001b\[\d+m/g), '')
+                    );
+                    // validate
+                    local.swgg.swaggerValidateJson(JSON.parse(data));
+                    options.onNext();
+                    break;
+                default:
+                    onError(error, error
+                        ? 'swagger-validate - failed - ' + options.file + '\n\n' + error.message
+                        : 'swagger-validate - passed - ' + options.file);
+                }
+            });
+            options.modeNext = 0;
+            options.onNext();
+        };
+
+        local.swaggerValidateJson = function (swaggerJson) {
+        /*
+         * this function will swagger-validate the json-object swaggerJson
+         */
+            var operation, operationIdDict, pathDict, prefix, test, tmp;
+            operationIdDict = {};
+            swaggerJson = swaggerJson || {};
+            local.validateBySwaggerSchema({
+                data: swaggerJson,
+                modeSchema: true,
+                prefix: ['swaggerJson'],
+                schema: local.swaggerSchemaJson,
+                swaggerJson: swaggerJson
+            });
+            // validate semanticUniquePath
+            pathDict = {};
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                tmp = path.replace((/\{.*?\}/g), '{}');
+                test = !pathDict[tmp];
+                local.throwSwaggerError(!test && {
+                    data: {},
+                    errorType: 'semanticUniquePath',
+                    prefix: ['swaggerJson', 'paths', path]
+                });
+                pathDict[tmp] = true;
+            });
+            // validate swaggerJson.definitions[key].properties[ii].default
+            Object.keys(swaggerJson.definitions || {}).forEach(function (schemaName) {
+                tmp = local.validateBySwaggerSchema({
+                    // dereference definition
+                    modeDereference: true,
+                    prefix: ['swaggerJson', 'definitions', schemaName],
+                    schema: swaggerJson.definitions[schemaName],
+                    swaggerJson: swaggerJson
+                });
+                Object.keys(tmp.properties || {}).forEach(function (key) {
+                    local.validateBySwaggerSchema({
+                        modeDefault: true,
+                        prefix: ['swaggerJson', 'definitions', schemaName, 'properties', key],
+                        schema: tmp.properties[key],
+                        swaggerJson: swaggerJson
+                    });
+                });
+            });
+            // validate swaggerJson.parameters[key].default
+            Object.keys(swaggerJson.parameters || []).forEach(function (key) {
+                local.validateBySwaggerSchema({
+                    modeDefault: true,
+                    prefix: ['swaggerJson', 'parameters', key],
+                    schema: swaggerJson.parameters[key],
+                    swaggerJson: swaggerJson
+                });
+            });
+            // validate swaggerJson.paths[key][key].parameters[ii].default
+            Object.keys(swaggerJson.paths).forEach(function (path) {
+                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
+                    prefix = ['swaggerJson', 'paths', path, method];
+                    operation = local.validateBySwaggerSchema({
+                        // dereference operation
+                        modeDereference: true,
+                        prefix: prefix,
+                        schema: swaggerJson.paths[path][method],
+                        swaggerJson: swaggerJson
+                    });
+                    // validate semanticUniqueOperationId
+                    test = !operationIdDict[operation.operationId];
+                    local.throwSwaggerError(!test && {
+                        data: operation.operationId,
+                        errorType: 'semanticUniqueOperationId',
+                        prefix: prefix.concat(['operationId'])
+                    });
+                    operationIdDict[operation.operationId] = true;
+                    (operation.parameters || []).forEach(function (schemaP) {
+                        local.validateBySwaggerSchema({
+                            modeDefault: true,
+                            prefix: prefix.concat(['parameters', schemaP.name]),
+                            schema: schemaP,
+                            swaggerJson: swaggerJson
+                        });
+                    });
+                });
+            });
+        };
+
         local.throwSwaggerError = function (options) {
         /*
          * this function will throw a swaggerError with the given options.errorType
          */
-            var error, tmp;
+            var error;
             if (!options) {
                 return;
             }
@@ -24971,16 +26011,14 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     return '[' + JSON.stringify(element) + ']';
                 }).join('');
             });
-            tmp = JSON.stringify(options.data);
-            options.prefix0 += ' = ' + (typeof tmp === 'string' && tmp.length > 100
-                ? tmp.slice(0, 100) + '...' + tmp.slice(-1)
-                : tmp);
-            switch (options.errorType) {
-            case 'semanticUniqueOperationId':
-                options.prefix0 += '["operationId"]';
-                break;
-            }
-            options.schema2 = JSON.stringify(options.schema) || 'undefined';
+            options.prefix0 += ' = ' + local.stringTruncate(
+                JSON.stringify(options.data) || 'undefined',
+                100
+            );
+            options.schema2 = local.stringTruncate(
+                JSON.stringify(options.schema) || 'undefined',
+                500
+            );
             options.type2 = (options.schema && local.schemaPType(options.schema)) || 'object';
             if (options.schema && options.schema.format) {
                 options.type2 += ' (' + options.schema.format + ')';
@@ -25301,6 +26339,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
          * this function will toggle the display of the resource
          */
             location.hash = '!' + event.currentTarget.id;
+            event.target2 = event.target2.closest('.onEventResourceDisplayAction.td');
             event.target2.className.split(' ').some(function (className) {
                 switch (className) {
                 case 'td1':
@@ -25348,174 +26387,182 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             });
         };
 
-        local.uiEventListenerDict['.onEventUiReload'] = function (event, onError) {
+        local.uiEventListenerDict['.onEventUiReload'] = function (options, onError) {
         /*
          * this function will reload the ui
          */
-            event = event || {};
-            // clear all apiKeyValue's from localStorage
-            if (event.target2 && event.target2.id === 'swggApiKeyClearButton1') {
-                local.apiKeyValue = '';
-                Object.keys(localStorage).forEach(function (key) {
-                    if (key.indexOf('utility2_swgg_apiKeyKey_') === 0) {
-                        localStorage.removeItem(key);
+            var resource, swaggerJson;
+            options = swaggerJson = options || {};
+            local.onNext(options, function (error, data) {
+                switch (options.modeNext) {
+                case 1:
+                    options.inputUrl = document.querySelector('.swggUiContainer > .thead > .td2');
+                    // clear all apiKeyValue's from localStorage
+                    if (options.target2 && options.target2.id === 'swggApiKeyClearButton1') {
+                        local.apiKeyValue = '';
+                        Object.keys(localStorage).forEach(function (key) {
+                            if (key.indexOf('utility2_swgg_apiKeyKey_') === 0) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                    // restore apiKeyValue
+                    } else if (options.swggInit) {
+                        local.apiKeyKey = 'utility2_swgg_apiKeyKey_' +
+                            encodeURIComponent(local.urlParse(
+                                options.inputUrl.value.replace((/^\//), '')
+                            ).href);
+                        local.apiKeyValue = localStorage.getItem(local.apiKeyKey) || '';
+                    // save apiKeyValue
+                    } else {
+                        local.apiKeyValue = document.querySelector('#swggApiKeyInput1').value;
+                        local.localStorageSetItemOrClear(local.apiKeyKey, local.apiKeyValue);
                     }
-                });
-            // restore apiKeyValue
-            } else if (event.swggInit) {
-                local.apiKeyKey = 'utility2_swgg_apiKeyKey_' + encodeURIComponent(local.urlParse(
-                    document.querySelector('.swggUiContainer > .thead > .td2').value
-                        .replace((/^\//), '')
-                ).href);
-                local.apiKeyValue = localStorage.getItem(local.apiKeyKey) || '';
-            // save apiKeyValue
-            } else {
-                local.apiKeyValue = document.querySelector('#swggApiKeyInput1').value;
-                local.localStorageSetItemOrClear(local.apiKeyKey, local.apiKeyValue);
-            }
-            // if keyup-event is not return-key, then return
-            if ((event.type === 'keyup' && event.code !== 'Enter') ||
-                    // do not reload ui during test
-                    local.global.utility2_modeTestRun >= 2) {
-                return;
-            }
-            // reset ui
-            Array.from(document.querySelectorAll(
-                '.swggUiContainer > .reset'
-            )).forEach(function (element) {
-                element.remove();
+                    // if keyup-event is not return-key, then return
+                    if ((options.type === 'keyup' && options.code !== 'Enter') ||
+                            // do not reload ui during test
+                            local.global.utility2_modeTestRun >= 2) {
+                        return;
+                    }
+                    // reset ui
+                    document.querySelector('#swggUiReloadErrorDiv1').textContent = '';
+                    Array.from(document.querySelectorAll(
+                        '.swggUiContainer > .reset'
+                    )).forEach(function (element) {
+                        element.remove();
+                    });
+                    // normalize swaggerJsonUrl
+                    options.inputUrl.value = local.urlParse(
+                        options.inputUrl.value.replace((/^\//), '')
+                    ).href;
+                    document.querySelector('#swggAjaxProgressDiv1 span').innerHTML =
+                        'loading swagger.json';
+                    options.onNext();
+                    break;
+                case 2:
+                    // fetch swagger.json file
+                    local.ajax({ url: options.inputUrl.value }, options.onNext);
+                    break;
+                case 3:
+                    // JSON.parse swagger.json string
+                    local.tryCatchOnError(function () {
+                        options.onNext(null, JSON.parse(data.responseText));
+                    }, options.onNext);
+                    break;
+                case 4:
+                    // reset state
+                    local.apiDict = local.swaggerJson = null;
+                    // apiUpdate swagger.json object
+                    local.apiUpdate(data);
+                    swaggerJson = local.uiState = local.jsonCopy(local.swaggerJson);
+                    // init ajaxProgressText
+                    swaggerJson.ajaxProgressText = 'rendering swagger.json';
+                    // init apiKeyValue
+                    swaggerJson.apiKeyValue = local.apiKeyValue;
+                    // templateRender title
+                    document.querySelector('head > title').textContent = local.templateRender(
+                        local.templateUiTitle,
+                        swaggerJson
+                    ).trim();
+                    // init urlSwaggerJson
+                    swaggerJson.urlSwaggerJson = options.inputUrl.value;
+                    // templateRender main
+                    document.querySelector('.swggUiContainer').innerHTML = local.templateRender(
+                        local.templateUiMain,
+                        swaggerJson
+                    );
+                    setTimeout(function () {
+                        // recurse - render .resourceList
+                        local.uiEventListenerDict['.onEventUiReload'](swaggerJson, options.onNext);
+                    }, 100);
+                    break;
+                default:
+                    local.onErrorDefault(error);
+                    // debug error
+                    local._debugOnEventUiReload = error || local._debugOnEventUiReload;
+                    document.querySelector('#swggUiReloadErrorDiv1').textContent =
+                        (error || { message: '' }).message;
+                    local.setTimeoutOnError(onError, 0, error);
+                }
             });
-            // normalize swaggerJsonUrl
-            document.querySelector('.swggUiContainer > .thead > .td2').value = local.urlParse(
-                document.querySelector('.swggUiContainer > .thead > .td2').value
-                    .replace((/^\//), '')
-            ).href;
-            document.querySelector('#swggAjaxProgressDiv1 span').innerHTML = 'loading swagger.json';
-            // fetch swagger.json file
-            local.apiUpdate({
-                modeAjax: true,
-                url: document.querySelector('.swggUiContainer > .thead > .td2').value
-            }, function (error) {
-                local.uiRenderAll(null, onError);
-                local.tryCatchOnError(function () {
-                    local.validateBySwaggerJson({ swaggerJson: local.swaggerJson });
-                }, local.uiNotify);
-                local.uiNotify(error);
-            });
-        };
-
-        local.uiNotify = function (error) {
-        /*
-         * this function will notify with the given error
-         */
-            var element;
-            element = document.querySelector('#swggAjaxProgressPre1');
-            if (!error) {
-                return element;
-            }
-            element.textContent = error.message + '\n' + element.textContent;
-            // shake input on error
-            local.uiAnimateShakeIfError(error, element);
-            return element;
-        };
-
-        local.uiRenderAll = function (options, onError) {
-        /*
-         * this function will render swagger-ui
-         */
-            var resource;
             // optimization - render .swggUiContainer first
-            if (!(options && options.swagger)) {
-                options = local.uiState = local.jsonCopy(local.swaggerJson);
-                // init ajaxProgressText
-                options.ajaxProgressText = 'rendering swagger.json';
-                // init apiKeyValue
-                options.apiKeyValue = local.apiKeyValue;
-                // templateRender title
-                document.querySelector('head > title').textContent = local.templateRender(
-                    local.templateUiTitle,
-                    options
-                ).trim();
-                // init urlSwaggerJson
-                options.urlSwaggerJson = document.querySelector(
-                    '.swggUiContainer > .thead > .td2'
-                ).value;
-                // templateRender main
-                document.querySelector('.swggUiContainer').innerHTML = local.templateRender(
-                    local.templateUiMain,
-                    options
-                );
-                setTimeout(function () {
-                    local.uiRenderAll(options, onError);
-                }, 100);
+            if (!swaggerJson.swagger) {
+                options.modeNext = 0;
+                options.onNext();
                 return;
             }
             // optimization - render .resourceList in separate event-loop
             // reset state
             local.idDomElementDict = {};
-            local.objectSetDefault(options, { resourceDict: {}, operationDict: {}, tagDict: {} });
+            local.objectSetDefault(swaggerJson, {
+                resourceDict: {},
+                operationDict: {},
+                tagDict: {}
+            });
             // init tagDict
-            options.tags.forEach(function (tag) {
-                options.tagDict[tag.name] = tag;
+            swaggerJson.tags.forEach(function (tag) {
+                swaggerJson.tagDict[tag.name] = tag;
             });
             // init operationDict
             Object.keys(local.apiDict).sort().forEach(function (operation) {
                 // init operation
                 operation = local.jsonCopy(local.apiDict[operation]);
                 operation.tags.forEach(function (tag) {
-                    options.operationDict[operation._methodPath] = operation;
+                    swaggerJson.operationDict[operation._methodPath] = operation;
                     // init resource
-                    resource = options.resourceDict[tag] = local.objectSetDefault(
-                        options.resourceDict[tag] || options.tagDict[tag],
-                        { description: 'no description', name: tag }
+                    resource = swaggerJson.resourceDict[tag] = local.objectSetDefault(
+                        swaggerJson.resourceDict[tag] || swaggerJson.tagDict[tag],
+                        {
+                            name: tag
+                        }
                     );
                     resource.id = resource.id || local.idDomElementCreate('swgg_id_' + tag);
+                    resource.summary = resource.summary || String(resource.description)
+                        .replace((/\bhttps?:\/\/[^\s<]+[^<.,:;"')\]\s]/g), '');
                 });
             });
             // init uiFragment
-            options.uiFragment = document.createDocumentFragment();
+            swaggerJson.uiFragment = document.createDocumentFragment();
             // init resourceDict
-            Object.keys(options.resourceDict).sort().forEach(function (key) {
+            Object.keys(swaggerJson.resourceDict).sort().forEach(function (key, ii) {
+                swaggerJson.resourceDict[key].ii = local.numberToRomanNumerals(ii + 1);
                 // templateRender resource
-                options.uiFragment.appendChild(
-                    local.domElementRender(local.templateUiResource, options.resourceDict[key])
+                swaggerJson.uiFragment.appendChild(
+                    local.domElementRender(local.templateUiResource, swaggerJson.resourceDict[key])
                 );
             });
-            Object.keys(options.operationDict).sort(function (aa, bb) {
-                aa = options.operationDict[aa];
-                aa = aa._path + ' ' + aa._method;
-                bb = options.operationDict[bb];
-                bb = bb._path + ' ' + bb._method;
+            Object.keys(swaggerJson.operationDict).sort(function (aa, bb) {
+                aa = swaggerJson.operationDict[aa];
+                aa = aa['x-swgg-sortValue'] || (aa._path + ' ' + aa._method);
+                bb = swaggerJson.operationDict[bb];
+                bb = bb['x-swgg-sortValue'] || (bb._path + ' ' + bb._method);
                 return aa < bb
                     ? -1
                     : 1;
             }).forEach(function (operation) {
-                operation = options.operationDict[operation];
+                operation = swaggerJson.operationDict[operation];
                 operation.id = local.idDomElementCreate('swgg_id_' + operation.operationId);
                 operation.tags.forEach(function (tag) {
                     // create new operation for each tag
                     operation = local.jsonCopy(operation);
-                    resource = options.resourceDict[tag];
+                    resource = swaggerJson.resourceDict[tag];
                     local.objectSetDefault(operation, {
-                        description: 'no description',
                         responseList: Object.keys(operation.responses).sort().map(function (key) {
                             return {
                                 key: key,
-                                value: local.objectSetDefault(operation.responses[key], {
-                                    description: 'no description'
-                                })
+                                value: operation.responses[key]
                             };
                         }),
-                        summary: operation.description || 'no summary'
+                        summary: operation.description
+                            .replace((/\bhttps?:\/\/[^\s<]+[^<.,:;"')\]\s]/g), '')
                     });
                     operation.parameters.forEach(local.uiRenderSchemaP);
                     // templateRender operation
-                    options.uiFragment.querySelector('#' + resource.id + ' .operationList')
+                    swaggerJson.uiFragment.querySelector('#' + resource.id + ' .operationList')
                         .appendChild(local.domElementRender(local.templateUiOperation, operation));
                 });
             });
             // emulate <ol></ol> for operations
-            Array.from(options.uiFragment.querySelectorAll(
+            Array.from(swaggerJson.uiFragment.querySelectorAll(
                 '.operationList'
             )).forEach(function (element) {
                 Array.from(element.querySelectorAll(
@@ -25527,7 +26574,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             // append uiFragment to swggUiContainer
             document.querySelector('#swggAjaxProgressDiv1').style.display = 'none';
             document.querySelector('.swggUiContainer .resourceList').appendChild(
-                options.uiFragment
+                swaggerJson.uiFragment
             );
             Array.from(document.querySelectorAll(
                 '.swggUiContainer [data-value-text]'
@@ -25691,6 +26738,20 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             schemaP.innerHTML = local.templateRender(local.templateUiParameter, schemaP);
         };
 
+        local.urlParseWithBraket = function (url) {
+        /*
+         * this function will urlParse the url with curly-brackets preserved
+         */
+            var braket;
+            braket = [
+                local.stringUniqueKey(url) + '0',
+                local.stringUniqueKey(url) + '1'
+            ];
+            return JSON.parse(JSON.stringify(
+                local.urlParse(url.replace((/\{/g), braket[0]).replace((/\}/g), braket[1]))
+            ).replace(new RegExp(braket[0], 'g'), '{').replace(new RegExp(braket[1], 'g'), '}'));
+        };
+
         local.userLoginByPassword = function (options, onError) {
         /*
          * this function will send a login-by-password request
@@ -25717,78 +26778,6 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 return;
             }
             local.serverRespondJsonapi(request, response, error);
-        };
-
-        local.validateBySwaggerJson = function (options) {
-        /*
-         * this function will validate the entire swagger json object
-         */
-            var operation, operationIdDict, prefix, swaggerJson, test, tmp;
-            operationIdDict = {};
-            swaggerJson = options.swaggerJson || {};
-            local.validateBySwaggerSchema(local.objectSetDefault(options, {
-                data: swaggerJson,
-                modeSchema: true,
-                prefix: ['swaggerJson'],
-                schema: local.swaggerSchemaJson,
-                swaggerJson: swaggerJson
-            }));
-            // validate swaggerJson.definitions[key].properties[ii].default
-            Object.keys(swaggerJson.definitions || {}).forEach(function (schemaName) {
-                tmp = local.validateBySwaggerSchema({
-                    // dereference definition
-                    modeDereference: true,
-                    prefix: ['swaggerJson', 'definitions', schemaName],
-                    schema: swaggerJson.definitions[schemaName],
-                    swaggerJson: swaggerJson
-                });
-                Object.keys(tmp.properties || {}).forEach(function (key) {
-                    local.validateBySwaggerSchema({
-                        modeDefault: true,
-                        prefix: ['swaggerJson', 'definitions', schemaName, 'properties', key],
-                        schema: tmp.properties[key],
-                        swaggerJson: swaggerJson
-                    });
-                });
-            });
-            // validate swaggerJson.parameters[key].default
-            Object.keys(swaggerJson.parameters || []).forEach(function (key) {
-                local.validateBySwaggerSchema({
-                    modeDefault: true,
-                    prefix: ['swaggerJson', 'parameters', key],
-                    schema: swaggerJson.parameters[key],
-                    swaggerJson: swaggerJson
-                });
-            });
-            // validate swaggerJson.paths[key][key].parameters[ii].default
-            Object.keys(swaggerJson.paths).forEach(function (path) {
-                Object.keys(swaggerJson.paths[path]).forEach(function (method) {
-                    prefix = ['swaggerJson', 'paths', path, method];
-                    operation = local.validateBySwaggerSchema({
-                        // dereference operation
-                        modeDereference: true,
-                        prefix: prefix,
-                        schema: swaggerJson.paths[path][method],
-                        swaggerJson: swaggerJson
-                    });
-                    // validate semanticUniqueOperationId
-                    test = !operationIdDict[operation.operationId];
-                    local.throwSwaggerError(!test && {
-                        data: operation.operationId,
-                        errorType: 'semanticUniqueOperationId',
-                        prefix: prefix
-                    });
-                    operationIdDict[operation.operationId] = true;
-                    (operation.parameters || []).forEach(function (schemaP) {
-                        local.validateBySwaggerSchema({
-                            modeDefault: true,
-                            prefix: prefix.concat(['parameters', schemaP.name]),
-                            schema: schemaP,
-                            swaggerJson: swaggerJson
-                        });
-                    });
-                });
-            });
         };
 
         local.validateBySwaggerParameters = function (options) {
@@ -25935,10 +26924,9 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
             test = !options.modeSchema || local.schemaPType(data) !== 'array' ||
                 (typeof local.schemaPItems(data) === 'object' && local.schemaPItems(data));
             local.throwSwaggerError(!test && {
-                data: data,
                 errorType: 'semanticRequiredArrayItems',
                 prefix: options.prefix,
-                schema: schema
+                schema: data
             });
             // remove readOnly property
             if (schema.readOnly) {
@@ -25959,7 +26947,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                 test = !options.modeSchema;
                 break;
             case 'integer':
-                test = Number.isFinite(data) && Math.floor(data) === data;
+                test = Number.isInteger(data);
                 switch (schema.format) {
                 case 'int32':
                     break;
@@ -25990,7 +26978,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     test = JSON.stringify(new Date(data)) !== 'null';
                     break;
                 case 'email':
-                    test = local.regexpEmailValidate.test(data);
+                    test = local.regexpValidateEmail.test(data);
                     break;
                 case 'json':
                     test = local.tryCatchOnError(function () {
@@ -25999,7 +26987,7 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
                     }, local.nop);
                     break;
                 case 'phone':
-                    test = local.regexpPhoneValidate.test(data);
+                    test = local.regexpValidatePhone.test(data);
                     break;
                 }
                 break;

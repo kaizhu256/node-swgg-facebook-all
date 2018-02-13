@@ -56,7 +56,7 @@ this zero-dependency package will provide a swagger-client for facebook-all's we
 [![apidoc](https://kaizhu256.github.io/node-swgg-facebook-all/build/screenshot.buildCi.browser.%252Ftmp%252Fbuild%252Fapidoc.html.png)](https://kaizhu256.github.io/node-swgg-facebook-all/build..beta..travis-ci.org/apidoc.html)
 
 #### todo
-- npm publish 2018.1.18
+- npm publish v2018.1.18
 - continue adding extra facebook-all web-apis
 - none
 
@@ -346,10 +346,13 @@ instruction
         "url": "https://github.com/kaizhu256/node-swgg-facebook-all.git"
     },
     "scripts": {
+        "apidocRawCreate": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptApidocRawCreate",
+        "apidocRawFetch": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptApidocRawFetch",
         "build-ci": "utility2 shReadmeTest build_ci.sh",
         "env": "env",
         "heroku-postbuild": "npm uninstall utility2 2>/dev/null; npm install kaizhu256/node-utility2#alpha && utility2 shDeployHeroku",
-        "postinstall": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh postinstall",
+        "nameAliasPublish": "",
+        "postinstall": "[ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptPostinstall",
         "start": "PORT=${PORT:-8080} utility2 start test.js",
         "test": "PORT=$(utility2 shServerPortRandom) utility2 test test.js"
     },
