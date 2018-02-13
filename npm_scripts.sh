@@ -10,7 +10,7 @@ shNpmScriptApidocRawCreate() {(set -e
         grep -e "?" | \
         xargs -n 1 rm
     find developers.facebook.com -type f | \
-        xargs -n 1 node -e "
+        xargs -n 1 node -e '
 // <script>
 /*jslint
     bitwise: true,
@@ -22,19 +22,20 @@ shNpmScriptApidocRawCreate() {(set -e
     regexp: true,
     stupid: true
 */
-'use strict';
+"use strict";
 if (!(/\/index.html$/).test(process.argv[1])) {
-    require('fs').unlinkSync(process.argv[1]);
+    require("fs").unlinkSync(process.argv[1]);
 } else {
-    require('fs').writeFileSync(
+    require("fs").writeFileSync(
         process.argv[1],
-        require('fs').readFileSync(process.argv[1], 'utf8')
-            .replace((/(<\/\w+>)/g), '$1\n')
-            .replace((/(<\/\w+>)\n{2,}/g), '$1\n')
+        require("fs").readFileSync(process.argv[1], "utf8")
+            .replace((/(<script\b[\S\s]*?<\/script>)/g), "")
+            .replace((/(<\/\w+>)/g), "$1\n")
+            .replace((/(<\/\w+>)\n{2,}/g), "$1\n")
     );
 }
 // </script>
-        "
+        '
 )}
 
 shNpmScriptApidocRawFetch() {(set -e
