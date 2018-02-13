@@ -42,7 +42,7 @@ shNpmScriptApidocRawFetch() {(set -e
 # this function will fetch the raw apidoc
     mkdir -p tmp/apidoc.raw
     cd tmp/apidoc.raw
-    rm -fr developer.facebook.com
+    rm -fr developers.facebook.com
     wget \
         -U "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
 Chrome/64.0.1234.123 Safari/537.36" \
