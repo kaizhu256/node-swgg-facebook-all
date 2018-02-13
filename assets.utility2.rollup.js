@@ -13117,7 +13117,7 @@ local.CSSLint = CSSLint; local.JSLINT = JSLINT, local.jslintEs6 = jslint; }());
             lineno = 0;
             // parse script
             scriptParsed = script
-                // ignore url-comment
+                // ignore long-url-comment
                 .replace((/^ *?(?:\* |\/\/ )https?:\/\/.*?$/gm), '')
                 // ignore text-block
                 // /* jslint-ignore-begin */ ... /* jslint-ignore-end */
@@ -17414,7 +17414,7 @@ function TranslateElementInit() {\n\
                     options.browserWindow.loadURL('file://' + options.fileElectronHtml, {
                         userAgent: options.modeBrowserTest === 'scrape' &&
                             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
-                            '(KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
+                            '(KHTML, like Gecko) Chrome/64.0.1234.123 Safari/537.36'
                     });
                     break;
                 // node.electron - after html
@@ -23915,8 +23915,8 @@ document.querySelector(".swggUiContainer > .thead > .td2").value =\n\
 </script>\n\
 <script src="assets.utility2.rollup.js"></script>\n\
 <script>\n\
-window.local = window.swgg;\n\
-window.local.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });\n\
+window.local = window.local || window.swgg;\n\
+window.swgg.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });\n\
 </script>\n\
 </body>\n\
 </html>\n\
@@ -25328,13 +25328,13 @@ window.local.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });\n\
             });
             Object.keys(pathDict).forEach(function (key) {
                 Object.keys(pathDict[key]).sort().forEach(function (path, ii) {
-                    if (!(ii && swaggerJson['x-swgg-fixErrorSemanticUniquePath'])) {
-                        return;
+                    if (ii && swaggerJson['x-swgg-fixErrorSemanticUniquePath']) {
+                        swaggerJson.paths[path + '#' + ii] = swaggerJson.paths[path];
+                        delete swaggerJson.paths[path];
                     }
-                    swaggerJson.paths[path + '#' + ii] = swaggerJson.paths[path];
-                    delete swaggerJson.paths[path];
                 });
             });
+            // auto-create operationId from path
             Object.keys(swaggerJson.paths).forEach(function (path) {
                 Object.keys(swaggerJson.paths[path]).forEach(function (method) {
                     tmp = swaggerJson.paths[path][method];
@@ -26742,14 +26742,11 @@ window.local.uiEventListenerDict[".onEventUiReload"]({ swggInit: true });\n\
         /*
          * this function will urlParse the url with curly-brackets preserved
          */
-            var braket;
-            braket = [
-                local.stringUniqueKey(url) + '0',
-                local.stringUniqueKey(url) + '1'
-            ];
+            var tmp;
+            tmp = local.stringUniqueKey(url);
             return JSON.parse(JSON.stringify(
-                local.urlParse(url.replace((/\{/g), braket[0]).replace((/\}/g), braket[1]))
-            ).replace(new RegExp(braket[0], 'g'), '{').replace(new RegExp(braket[1], 'g'), '}'));
+                local.urlParse(url.replace((/\{/g), tmp + 1).replace((/\}/g), tmp + 2))
+            ).replace(new RegExp(tmp + 1, 'g'), '{').replace(new RegExp(tmp + 2, 'g'), '}'));
         };
 
         local.userLoginByPassword = function (options, onError) {
