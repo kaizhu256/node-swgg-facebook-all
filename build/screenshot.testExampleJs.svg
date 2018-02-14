@@ -1,0 +1,32 @@
+<svg height="254" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="254" fill="#555" width="720"></rect>
+<text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
+<tspan x="10" y="26"></tspan>
+
+<tspan x="10" y="42">&gt; swgg-facebook-all@2018.1.18 postinstall /tmp/app/node_modules/swgg-facebook-all</tspan>
+
+<tspan x="10" y="58">&gt; [ ! -f npm_scripts.sh ] || ./npm_scripts.sh shNpmScriptPostinstall</tspan>
+
+<tspan x="10" y="74"></tspan>
+
+<tspan x="10" y="90">/tmp/app</tspan>
+
+<tspan x="10" y="106">└── swgg-facebook-all@2018.1.18  (git://github.com/kaizhu256/node-swgg-facebook-all.git#1a9b5a71\</tspan>
+<tspan x="10" y="122">53eb20835980427a6d2133da5168ba57)</tspan>
+
+<tspan x="10" y="138"></tspan>
+
+<tspan x="10" y="154">npm WARN enoent ENOENT: no such file or directory, open '/tmp/app/package.json'</tspan>
+
+<tspan x="10" y="170">npm WARN app No description</tspan>
+
+<tspan x="10" y="186">npm WARN app No repository field.</tspan>
+
+<tspan x="10" y="202">npm WARN app No README data</tspan>
+
+<tspan x="10" y="218">npm WARN app No license field.</tspan>
+
+<tspan x="10" y="234">server starting on port 8081</tspan>
+
+</text>
+</svg>

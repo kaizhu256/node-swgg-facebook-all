@@ -1,0 +1,12 @@
+<svg height="142" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="142" fill="#555" width="720"></rect>
+<text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
+<tspan x="10" y="26">2017-10-19 17:43:33 +0800</tspan>
+<tspan x="10" y="42">[npm publish] - npm publish 2017.10.18</tspan>
+<tspan x="10" y="58">- initial package</tspan>
+<tspan x="10" y="74">- styleguide - change indent from 4-space -&gt; 2-space</tspan>
+<tspan x="10" y="90"></tspan>
+<tspan x="10" y="106">2014-03-26 02:31:50 +0700</tspan>
+<tspan x="10" y="122">add blank README.md</tspan>
+</text>
+</svg>

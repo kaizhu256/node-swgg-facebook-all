@@ -1,0 +1,147 @@
+<svg height="2302" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="2302" fill="#555" width="720"></rect>
+<text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
+<tspan x="10" y="26"></tspan>
+<tspan x="10" y="42">[MODE_BUILD=npmTestPublished] - 2017-10-19T10:41:41.458Z - npm-testing /tmp/npmTestPublished/nod\</tspan>
+<tspan x="10" y="58">e_modules/swgg-facebook</tspan>
+<tspan x="10" y="74"></tspan>
+<tspan x="10" y="90"></tspan>
+<tspan x="10" y="106">covering $ /home/travis/.nvm/versions/node/v6.11.4/bin/node /tmp/npmTestPublished/node_modules/s\</tspan>
+<tspan x="10" y="122">wgg-facebook/test.js</tspan>
+<tspan x="10" y="138">override assets assets.swgg.swagger.json</tspan>
+<tspan x="10" y="154">&gt; server listening on http-port 57897</tspan>
+<tspan x="10" y="170">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/package.json</tspan>
+<tspan x="10" y="186">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/assets.swgg.swagger.\</tspan>
+<tspan x="10" y="202">json</tspan>
+<tspan x="10" y="218">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/lib.swgg_facebook.js</tspan>
+<tspan x="10" y="234">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/LICENSE</tspan>
+<tspan x="10" y="250">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/package.json</tspan>
+<tspan x="10" y="266">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/README.md</tspan>
+<tspan x="10" y="282">apidocCreate - readExample /tmp/npmTestPublished/node_modules/swgg-facebook/test.js</tspan>
+<tspan x="10" y="298">apidocCreate - requiring /tmp/npmTestPublished/node_modules/swgg-facebook ...</tspan>
+<tspan x="10" y="314">apidocCreate - ... required /tmp/npmTestPublished/node_modules/swgg-facebook</tspan>
+<tspan x="10" y="330">created apidoc file /home/travis/build/kaizhu256/node-swgg-facebook/tmp/build/apidoc.html</tspan>
+<tspan x="10" y="346"></tspan>
+<tspan x="10" y="362">[node test-case 1 of 8 passed] - testCase_buildApidoc_default</tspan>
+<tspan x="10" y="378">[node test-case 2 of 8 passed] - testCase_buildCustomOrg_default</tspan>
+<tspan x="10" y="394">[node test-case 3 of 8 passed] - testCase_buildLib_default</tspan>
+<tspan x="10" y="410">[node test-case 4 of 8 passed] - testCase_buildReadme_default</tspan>
+<tspan x="10" y="426">[node test-case 5 of 8 passed] - testCase_buildTest_default</tspan>
+<tspan x="10" y="442">[node test-case 6 of 8 passed] - testCase_nop_default</tspan>
+<tspan x="10" y="458">Xlib:  extension "RANDR" missing on display ":99.0".</tspan>
+<tspan x="10" y="474">&gt; server listening on http-port 40045</tspan>
+<tspan x="10" y="490"></tspan>
+<tspan x="10" y="506">browserTest - created electron entry-page /tmp/npmTestPublished/node_modules/swgg-facebook/tmp/e\</tspan>
+<tspan x="10" y="522">lectron.15f34397a5c0.1070d6dddd527.html</tspan>
+<tspan x="10" y="538"></tspan>
+<tspan x="10" y="554">Xlib:  extension "RANDR" missing on display ":99.0".</tspan>
+<tspan x="10" y="570">[4717:1019/104143.172271:WARNING:audio_manager.cc(317)] Multiple instances of AudioManager detec\</tspan>
+<tspan x="10" y="586">ted</tspan>
+<tspan x="10" y="602">[4717:1019/104143.172384:WARNING:audio_manager.cc(278)] Multiple instances of AudioManager detec\</tspan>
+<tspan x="10" y="618">ted</tspan>
+<tspan x="10" y="634">[4749:1019/104143.185395:ERROR:sandbox_linux.cc(343)] InitializeSandbox() called with multiple t\</tspan>
+<tspan x="10" y="650">hreads in process gpu-process. </tspan>
+<tspan x="10" y="666">[4717:1019/104143.204427:ERROR:bus.cc(427)] Failed to connect to the bus: //bin/dbus-launch term\</tspan>
+<tspan x="10" y="682">inated abnormally without any error message</tspan>
+<tspan x="10" y="698">[4717:1019/104143.291764:ERROR:browser_gpu_channel_host_factory.cc(125)] Failed to create channe\</tspan>
+<tspan x="10" y="714">l.</tspan>
+<tspan x="10" y="730">[4717:1019/104143.291975:ERROR:browser_gpu_channel_host_factory.cc(125)] Failed to create channe\</tspan>
+<tspan x="10" y="746">l.</tspan>
+<tspan x="10" y="762">[4717:1019/104143.292208:ERROR:browser_gpu_channel_host_factory.cc(125)] Failed to create channe\</tspan>
+<tspan x="10" y="778">l.</tspan>
+<tspan x="10" y="794">[4717:1019/104143.292607:ERROR:browser_gpu_channel_host_factory.cc(125)] Failed to create channe\</tspan>
+<tspan x="10" y="810">l.</tspan>
+<tspan x="10" y="826">[4717:1019/104143.292791:ERROR:browser_gpu_channel_host_factory.cc(125)] Failed to create channe\</tspan>
+<tspan x="10" y="842">l.</tspan>
+<tspan x="10" y="858"></tspan>
+<tspan x="10" y="874">browserTest - opened http://127.0.0.1:57897/index.default.html?modeTest=1</tspan>
+<tspan x="10" y="890"></tspan>
+<tspan x="10" y="906">[4717:1019/104143.845440:INFO:CONSOLE(73)] "Uncaught TypeError: Cannot read property '/assets.sw\</tspan>
+<tspan x="10" y="922">gg.html' of undefined", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/elec\</tspan>
+<tspan x="10" y="938">tron.15f34397a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="954">[4717:1019/104143.867511:INFO:CONSOLE(73)] "[browser test-case 1 of 8 passed] - testCase_buildAp\</tspan>
+<tspan x="10" y="970">idoc_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f3\</tspan>
+<tspan x="10" y="986">4397a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1002">[4717:1019/104143.869717:INFO:CONSOLE(73)] "[browser test-case 2 of 8 passed] - testCase_buildAp\</tspan>
+<tspan x="10" y="1018">p_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f3439\</tspan>
+<tspan x="10" y="1034">7a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1050">[4717:1019/104143.872197:INFO:CONSOLE(73)] "[browser test-case 3 of 8 passed] - testCase_buildCu\</tspan>
+<tspan x="10" y="1066">stomOrg_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.1\</tspan>
+<tspan x="10" y="1082">5f34397a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1098">[4717:1019/104143.873179:INFO:CONSOLE(73)] "[browser test-case 4 of 8 passed] - testCase_buildLi\</tspan>
+<tspan x="10" y="1114">b_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f3439\</tspan>
+<tspan x="10" y="1130">7a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1146">[4717:1019/104143.874231:INFO:CONSOLE(73)] "[browser test-case 5 of 8 passed] - testCase_buildRe\</tspan>
+<tspan x="10" y="1162">adme_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f3\</tspan>
+<tspan x="10" y="1178">4397a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1194">[4717:1019/104143.876581:INFO:CONSOLE(73)] "[browser test-case 6 of 8 passed] - testCase_buildTe\</tspan>
+<tspan x="10" y="1210">st_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f343\</tspan>
+<tspan x="10" y="1226">97a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1242">[4717:1019/104143.876882:INFO:CONSOLE(73)] "[browser test-case 7 of 8 passed] - testCase_nop_def\</tspan>
+<tspan x="10" y="1258">ault", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f34397a5c0\</tspan>
+<tspan x="10" y="1274">.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1290">[4717:1019/104143.877599:INFO:CONSOLE(73)] "[browser test-case 8 of 8 passed] - testCase_webpage\</tspan>
+<tspan x="10" y="1306">_default", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f34397\</tspan>
+<tspan x="10" y="1322">a5c0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1338">[4717:1019/104144.881349:INFO:CONSOLE(73)] "----------|-----------|-----------|-----------|-----\</tspan>
+<tspan x="10" y="1354">------|</tspan>
+<tspan x="10" y="1370">File      |   % Stmts |% Branches |   % Funcs |   % Lines |</tspan>
+<tspan x="10" y="1386">----------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1402">----------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1418">All files |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1434">----------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1450">", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f34397a5c0.107\</tspan>
+<tspan x="10" y="1466">0d6dddd527.html (73)</tspan>
+<tspan x="10" y="1482">[4717:1019/104144.885180:INFO:CONSOLE(73)] "created coverage file /tmp/build/coverage.html/index\</tspan>
+<tspan x="10" y="1498">.html", source: file:///tmp/npmTestPublished/node_modules/swgg-facebook/tmp/electron.15f34397a5c\</tspan>
+<tspan x="10" y="1514">0.1070d6dddd527.html (73)</tspan>
+<tspan x="10" y="1530">[node test-case 7 of 8 passed] - testCase_buildApp_default</tspan>
+<tspan x="10" y="1546"></tspan>
+<tspan x="10" y="1562">browserTest - created screenshot file /home/travis/build/kaizhu256/node-swgg-facebook/tmp/build/\</tspan>
+<tspan x="10" y="1578">screenshot.npmTestPublished.browser.%2F.png</tspan>
+<tspan x="10" y="1594"></tspan>
+<tspan x="10" y="1610">browserTest - created screenshot file /home/travis/build/kaizhu256/node-swgg-facebook/tmp/build/\</tspan>
+<tspan x="10" y="1626">screenshot.npmTestPublished.browser.%2F.html</tspan>
+<tspan x="10" y="1642"></tspan>
+<tspan x="10" y="1658">browserTest - merged coverage from file /tmp/npmTestPublished/node_modules/swgg-facebook/tmp/cov\</tspan>
+<tspan x="10" y="1674">erage.npmTestPublished.browser.%2Findex.default.html.json</tspan>
+<tspan x="10" y="1690"></tspan>
+<tspan x="10" y="1706"></tspan>
+<tspan x="10" y="1722">browserTest - merged test-report from file /tmp/npmTestPublished/node_modules/swgg-facebook/tmp/\</tspan>
+<tspan x="10" y="1738">test-report.npmTestPublished.browser.%2Findex.default.html.json</tspan>
+<tspan x="10" y="1754"></tspan>
+<tspan x="10" y="1770">[node test-case 8 of 8 passed] - testCase_webpage_default</tspan>
+<tspan x="10" y="1786">---------------------------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1802">File                       |   % Stmts |% Branches |   % Funcs |   % Lines |</tspan>
+<tspan x="10" y="1818">---------------------------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1834">   swgg-facebook/          |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1850">      example.js           |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1866">      lib.swgg_facebook.js |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1882">      test.js              |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1898">---------------------------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1914">All files                  |       100 |       100 |       100 |       100 |</tspan>
+<tspan x="10" y="1930">---------------------------|-----------|-----------|-----------|-----------|</tspan>
+<tspan x="10" y="1946"></tspan>
+<tspan x="10" y="1962">created coverage file /tmp/npmTestPublished/node_modules/swgg-facebook/tmp/build/coverage.html/i\</tspan>
+<tspan x="10" y="1978">ndex.html</tspan>
+<tspan x="10" y="1994"></tspan>
+<tspan x="10" y="2010">------------------------------------------------------</tspan>
+<tspan x="10" y="2026">| test-report - npmTestPublished - browser - /index.default.html - Mozilla/5.0 (X11; Linux x86_6\</tspan>
+<tspan x="10" y="2042">4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Electron/1.6.14 Safari/537.36 - 20\</tspan>
+<tspan x="10" y="2058">17-10-19T10:41:43.821Z</tspan>
+<tspan x="10" y="2074">|     13 ms             0 failed        8 passed     |</tspan>
+<tspan x="10" y="2090">------------------------------------------------------</tspan>
+<tspan x="10" y="2106">| test-report - npmTestPublished - node - linux v6.11.4 - 2017-10-19T10:41:41.717Z</tspan>
+<tspan x="10" y="2122">|  16616 ms             0 failed        8 passed     |</tspan>
+<tspan x="10" y="2138">------------------------------------------------------</tspan>
+<tspan x="10" y="2154"></tspan>
+<tspan x="10" y="2170">created test-report file /home/travis/build/kaizhu256/node-swgg-facebook/tmp/build/test-report.h\</tspan>
+<tspan x="10" y="2186">tml</tspan>
+<tspan x="10" y="2202"></tspan>
+<tspan x="10" y="2218"></tspan>
+<tspan x="10" y="2234">npmTestPublished - 0 failed tests</tspan>
+<tspan x="10" y="2250"></tspan>
+<tspan x="10" y="2266"></tspan>
+<tspan x="10" y="2282">[MODE_BUILD=npmTestPublished] - 2017-10-19T10:42:00.036Z - EXIT_CODE - 0</tspan>
+</text>
+</svg>

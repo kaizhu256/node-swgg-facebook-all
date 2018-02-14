@@ -1,0 +1,163 @@
+{
+  "basePath": "/",
+  "info": {
+    "description": "this zero-dependency package will provide a swagger-client for facebooks's web-apis, with a working demo",
+    "title": "swgg-facebook",
+    "version": "2017.10.18",
+    "x-homepage": "https://github.com/kaizhu256/node-swgg-facebook"
+  },
+  "paths": {
+    "/oauth/access_token": {
+      "get": {
+        "description": "App access tokens are used to make requests to Facebook APIs on behalf of an app rather than a user. This can be used to modify the parameters of your app, create and manage test users, or read your apps's insights.",
+        "operationId": "/oauth/access_token",
+        "parameters": [
+          {
+            "description": "client_id. https://developers.facebook.com/apps",
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "client_secret. https://developers.facebook.com/apps",
+            "in": "query",
+            "name": "client_secret",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "default": "client_credentials",
+            "description": "grant_type. https://developers.facebook.com/apps",
+            "in": "query",
+            "name": "grant_type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response"
+          }
+        },
+        "summary": "App Access Tokens. https://developers.facebook.com/docs/facebook-login/access-tokens/#apptokens",
+        "tags": [
+          "facebook-graph"
+        ],
+        "x-host": "graph.facebook.com",
+        "x-product": "facebook-graph"
+      }
+    },
+    "/{facebook_graph_version}/{user-id}": {
+      "get": {
+        "description": "A user represents a person on Facebook. The /{user-id} node returns a single user.",
+        "operationId": "/{facebook_graph_version}/{user-id}",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "access_token",
+            "type": "string",
+            "x-ref": "facebookGraphAccessTokenUser"
+          },
+          {
+            "in": "path",
+            "name": "facebook_graph_version",
+            "required": true,
+            "type": "string",
+            "x-ref": "facebookGraphVersion"
+          },
+          {
+            "in": "path",
+            "name": "user-id",
+            "required": true,
+            "type": "string",
+            "x-ref": "facebookGraphUserId"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response"
+          }
+        },
+        "summary": "User. Reading. https://developers.facebook.com/docs/graph-api/reference/user/",
+        "tags": [
+          "facebook-graph"
+        ],
+        "x-host": "graph.facebook.com",
+        "x-product": "facebook-graph"
+      }
+    },
+    "/{facebook_graph_version}/{user-id}/accounts": {
+      "get": {
+        "description": "Permissions. Developers usually request these permissions for this endpoint: Marketing Apps. ads_management manage_pages pages_show_list. Page management Apps. manage_pages pages_show_list.",
+        "operationId": "/{facebook_graph_version}/{user-id}/accounts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "access_token",
+            "type": "string",
+            "x-ref": "facebookGraphAccessTokenUser"
+          },
+          {
+            "in": "path",
+            "name": "facebook_graph_version",
+            "required": true,
+            "type": "string",
+            "x-ref": "facebookGraphVersion"
+          },
+          {
+            "in": "path",
+            "name": "user-id",
+            "required": true,
+            "type": "string",
+            "x-ref": "facebookGraphUserId"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response"
+          }
+        },
+        "summary": "User Accounts. Reading. https://developers.facebook.com/docs/graph-api/reference/user/accounts/",
+        "tags": [
+          "facebook-graph"
+        ],
+        "x-host": "graph.facebook.com",
+        "x-product": "facebook-graph"
+      }
+    }
+  },
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "tags": [
+    {
+      "description": "https://developers.facebook.com/docs/graph-api/reference",
+      "name": "facebook-graph",
+      "x-product": "facebook-graph"
+    }
+  ],
+  "x-corsForwardProxyHost": "https://h1-proxy1.herokuapp.com",
+  "x-definitionsParameters": {
+    "facebookGraphAccessTokenUser": {
+      "description": "The user token is the most commonly used type of token. This kind of access token is needed any time the app calls an API to read, modify or write a specific person's Facebook data on their behalf. User access tokens are generally obtained via a login dialog and require a person to permit your app to obtain one. https://developers.facebook.com/docs/facebook-login/access-tokens#usertokens",
+      "x-apiKey": true,
+      "x-example": "xxxxxxxx",
+      "x-product": "facebook-graph"
+    },
+    "facebookGraphUserId": {
+      "default": "me",
+      "description": "A user represents a person on Facebook. The /{user-id} node returns a single user. https://developers.facebook.com/docs/graph-api/reference/user/",
+      "name": "user-id",
+      "x-product": "facebook-graph"
+    },
+    "facebookGraphVersion": {
+      "default": "v2.10",
+      "description": "The Graph API has multiple versions available to access at any one time. Each version contains a set of core fields and edge operations. We guarantee that those core APIs will be available and un-modified in that version for at least 2 years from release. The platform changelog can tell you which versions are currently available. https://developers.facebook.com/docs/graph-api/overview/#versions",
+      "name": "facebook_graph_version",
+      "x-product": "facebook-graph"
+    }
+  },
+  "x-description": "https://developers.facebook.com/docs/"
+}
