@@ -29,6 +29,9 @@ process.argv.slice(1).forEach(function (file1, file2) {
     local.fs.mkdir(local.path.dirname(file2), local.nop);
     local.fs.readFile(file1, "utf8", function (error, data) {
         local.assert(!error, error);
+        if (file1 !== file2) {
+            local.fs.unlink(file1, local.onErrorDefault);
+        }
         data = data
             .replace((/(<script\b[\S\s]*?<\/script>)/g), "")
             .replace((/(<\/\w+>)/g), "$1\n")
