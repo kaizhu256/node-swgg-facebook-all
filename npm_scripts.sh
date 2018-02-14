@@ -4,13 +4,7 @@ shNpmScriptApidocRawCreate() {(set -e
 # this function will create the raw apidoc
     cd tmp/apidoc.raw
     find developers.facebook.com -type f | \
-        grep -ve "index.html\>" | \
-        xargs -n 1 rm
-    find developers.facebook.com -type f | \
-        grep -e "?" | \
-        xargs -n 1 rm
-    find developers.facebook.com -type f | \
-        xargs -n 1 node -e '
+        xargs -n 100 node -e '
 // <script>
 /*jslint
     bitwise: true,
@@ -23,17 +17,25 @@ shNpmScriptApidocRawCreate() {(set -e
     stupid: true
 */
 "use strict";
-if (!(/\/index.html$/).test(process.argv[1])) {
-    require("fs").unlinkSync(process.argv[1]);
-} else {
-    require("fs").writeFileSync(
-        process.argv[1],
-        require("fs").readFileSync(process.argv[1], "utf8")
+var local;
+local = require("../../assets.utility2.rollup.js");
+process.argv.slice(1).forEach(function (file1, file2) {
+    file2 = file1.replace((/(\w)\.1$/), "$1/index.html");
+    if (!(/\/index.html$/).test(file2) ||
+            ((/\w\.1$/).test(file1) && local.fs.existsSync(file2))) {
+        local.fs.unlink(file1, local.onErrorDefault);
+        return;
+    }
+    local.fs.mkdir(local.path.dirname(file2), local.nop);
+    local.fs.readFile(file1, "utf8", function (error, data) {
+        local.assert(!error, error);
+        data = data
             .replace((/(<script\b[\S\s]*?<\/script>)/g), "")
             .replace((/(<\/\w+>)/g), "$1\n")
-            .replace((/(<\/\w+>)\n{2,}/g), "$1\n")
-    );
-}
+            .replace((/(<\/\w+>)\n{2,}/g), "$1\n");
+        local.fs.writeFile(file2, data, local.onErrorDefault);
+    });
+});
 // </script>
         '
 )}
@@ -47,7 +49,7 @@ shNpmScriptApidocRawFetch() {(set -e
         --default-page=index.html \
         -U "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
 Chrome/64.0.1234.123 Safari/537.36" \
-        -l 2 -nc -np -nv -r -t 10 \
+        -l 2 -nc -np -nv -r \
         https://developers.facebook.com/docs/graph-api/reference/ 2>&1 | \
     tee wget.log
 )}
