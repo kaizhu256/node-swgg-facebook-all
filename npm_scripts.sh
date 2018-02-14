@@ -20,22 +20,23 @@ shNpmScriptApidocRawCreate() {(set -e
 var local;
 local = require("../../assets.utility2.rollup.js");
 process.argv.slice(1).forEach(function (file1, file2) {
-    file2 = (file1 + "/index.html")
-        .replace((/\/index.html\/|\.1\/index.html/), "/")
-        .replace("//", "/");
-    if (!(/\/index.html$/).test(file2) ||
-            ((/\w\.1$/).test(file1) && local.fs.existsSync(file2))) {
-        local.fs.unlink(file1, local.onErrorDefault);
-        return;
-    }
     local.fs.readFile(file1, "utf8", function (error, data) {
+        file2 = (file1 + "/index.html")
+            .replace((/\/index.html\/|\.1\/index.html/), "/")
+            .replace("//", "/");
+        if (!(/\/index.html$/).test(file2) ||
+                ((/\w\.1$/).test(file1) && local.fs.existsSync(file2))) {
+            local.fs.unlink(file1, local.onErrorDefault);
+            return;
+        }
         local.assert(!error, error);
         if (file1 !== file2) {
             local.fs.unlink(file1, local.onErrorDefault);
         }
-        data = "<div data-click-area=\"main\">" + (data
-            .split("<div data-click-area=\"main\">")[1] || "")
+        data = "<div id=\"documentation_body_pagelet\"" + data
+            .split("<div id=\"documentation_body_pagelet\"")[1]
             .split("<script>")[0];
+        local.assert(data.indexOf("<script") < 0);
         local.fs.mkdir(local.path.dirname(file2), function () {
             local.fs.writeFile(file2, data, local.onErrorDefault);
         });
