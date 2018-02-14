@@ -1,0 +1,372 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/kaizhu256/node-swgg-facebook"
+
+    >swgg-facebook (v2017.11.6)</a>
+</h1>
+<h4>this zero-dependency package will provide a javascript-client for facebook's web-apis, with a working web-demo</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.swgg-facebook">module swgg-facebook</a><ol>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.swgg.apiDict">module swgg.apiDict</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.swgg.apiDict.operationId._2Foauth_2Faccess_token_20get.ajax">
+            function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2Foauth_2Faccess_token_20get.ajax
+            <span class="apidocSignatureSpan">(options, onError)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.swgg-facebook" id="apidoc.module.swgg-facebook">module swgg-facebook</a></h1>
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.swgg.apiDict" id="apidoc.module.swgg.apiDict">module swgg.apiDict</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;GET /{}/{}#requireAchievementId&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Bachievement-id_7D_23requireAchievementId_20get&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;achievement-id&#x22;: &#x22;abcd1234&#x22;
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;DELETE /{}/{}#requireTestUserId&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20delete&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;user-id&#x22;: &#x22;me&#x22;
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;POST /{}/{}#requireTestUserId&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Btest-user-id_7D_23requireTestUserId_20post&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;user-id&#x22;: &#x22;me&#x22;,
+        &#x22;name&#x22;: &#x22;abcd1234&#x22;,
+        &#x22;password&#x22;: &#x22;abcd1234&#x22;
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;GET /{}/{}#requireUserId&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_23requireUserId_20get&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;user-id&#x22;: &#x22;me&#x22;,
+        &#x22;fields&#x22;: [
+            &#x22;about&#x22;
+        ]
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;GET /{}/{}/accounts&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Faccounts_20get&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;user-id&#x22;: &#x22;me&#x22;,
+        &#x22;business_id&#x22;: &#x22;abcd1234&#x22;,
+        &#x22;is_business&#x22;: false,
+        &#x22;is_place&#x22;: false,
+        &#x22;is_promotable&#x22;: false
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax" id="apidoc.element.swgg.apiDict.operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;GET /{}/{}/achievements&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2F_7Bfacebook_graph_version_7D_2F_7Buser-id_7D_2Fachievements_20get&#x22;].ajax({
+        &#x22;access_token&#x22;: &#x22;xxxxxxxx&#x22;,
+        &#x22;facebook_graph_version&#x22;: &#x22;v2.10&#x22;,
+        &#x22;user-id&#x22;: &#x22;me&#x22;,
+        &#x22;app_id_filter&#x22;: 0,
+        &#x22;object&#x22;: &#x22;abcd1234&#x22;,
+        &#x22;type&#x22;: &#x22;abcd1234&#x22;
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.swgg.apiDict.operationId._2Foauth_2Faccess_token_20get.ajax" id="apidoc.element.swgg.apiDict.operationId._2Foauth_2Faccess_token_20get.ajax">
+        function <span class="apidocSignatureSpan">swgg.apiDict.</span>operationId._2Foauth_2Faccess_token_20get.ajax
+        <span class="apidocSignatureSpan">(options, onError)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">operationId._2Foauth_2Faccess_token_20get.ajax = function (options, onError) {
+<span class="apidocCodeCommentSpan">/*
+ * this function will make the api-call &#x22;GET /oauth/access_token&#x22;
+ * example usage:
+    swgg.apiDict[&#x22;operationId._2Foauth_2Faccess_token_20get&#x22;].ajax({
+        &#x22;client_id&#x22;: &#x22;abcd1234&#x22;,
+        &#x22;client_secret&#x22;: &#x22;abcd1234&#x22;,
+        &#x22;grant_type&#x22;: &#x22;client_credentials&#x22;
+    }, function (error, data) {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(data.responseJson || data.responseText);
+    });
+ */
+</span>    return local.apiAjax(self, options, onError);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>

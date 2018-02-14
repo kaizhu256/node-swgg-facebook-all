@@ -1,0 +1,99 @@
+<svg height="846" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="846" fill="#555" width="720"></rect>
+<text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
+<tspan x="10" y="26"></tspan>
+
+<tspan x="10" y="42">[MODE_BUILD=buildApidoc] - 2018-02-13T14:04:57.429Z - npm-testing /home/travis/build/kaizhu256/n\</tspan>
+<tspan x="10" y="58">ode-swgg-facebook-all</tspan>
+
+<tspan x="10" y="74"></tspan>
+
+<tspan x="10" y="90"></tspan>
+
+<tspan x="10" y="106">buildApidoc - merged test-report from file /home/travis/build/kaizhu256/node-swgg-facebook-all/t\</tspan>
+<tspan x="10" y="122">mp/build/test-report.json</tspan>
+
+<tspan x="10" y="138">override assets assets.swgg.swagger.json</tspan>
+
+<tspan x="10" y="154">&gt; server listening on http-port 58239</tspan>
+
+<tspan x="10" y="170">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/package.json</tspan>
+
+<tspan x="10" y="186">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/assets.swgg.swagg\</tspan>
+<tspan x="10" y="202">er.json</tspan>
+
+<tspan x="10" y="218">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.gitignore</tspan>
+
+<tspan x="10" y="234">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/lib.swgg_facebook\</tspan>
+<tspan x="10" y="250">_all.js</tspan>
+
+<tspan x="10" y="266">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/LICENSE</tspan>
+
+<tspan x="10" y="282">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/npm_scripts.sh</tspan>
+
+<tspan x="10" y="298">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/package.json</tspan>
+
+<tspan x="10" y="314">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/README.md</tspan>
+
+<tspan x="10" y="330">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/test.js</tspan>
+
+<tspan x="10" y="346">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.travis.yml</tspan>
+
+<tspan x="10" y="362">apidocCreate - requiring /home/travis/build/kaizhu256/node-swgg-facebook-all ...</tspan>
+
+<tspan x="10" y="378">apidocCreate - ... required /home/travis/build/kaizhu256/node-swgg-facebook-all</tspan>
+
+<tspan x="10" y="394">created apidoc file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/apidoc.html</tspan>
+
+<tspan x="10" y="410"></tspan>
+
+<tspan x="10" y="426">[node test-case 1 of 1 passed] - testCase_buildApidoc_default</tspan>
+
+<tspan x="10" y="442"></tspan>
+
+<tspan x="10" y="458">buildApidoc - merged test-report from file /home/travis/build/kaizhu256/node-swgg-facebook-all/t\</tspan>
+<tspan x="10" y="474">mp/build/test-report.json</tspan>
+
+<tspan x="10" y="490"></tspan>
+
+<tspan x="10" y="506">-------------------------------------------------------</tspan>
+
+<tspan x="10" y="522">| test-report - buildApidoc - node - linux v6.12.3 - 2018-02-13T14:04:57.687Z</tspan>
+
+<tspan x="10" y="538">|     144 ms            0 failed        1 passed      |</tspan>
+
+<tspan x="10" y="554">-------------------------------------------------------</tspan>
+
+<tspan x="10" y="570">| test-report - npmTest - browser - /index.default.html - Mozilla/5.0 (X11; Linux x86_64) AppleW\</tspan>
+<tspan x="10" y="586">ebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Electron/1.6.15 Safari/537.36 - 2018-02-13T\</tspan>
+<tspan x="10" y="602">14:04:39.827Z</tspan>
+
+<tspan x="10" y="618">|      20 ms            0 failed        8 passed      |</tspan>
+
+<tspan x="10" y="634">-------------------------------------------------------</tspan>
+
+<tspan x="10" y="650">| test-report - npmTest - node - linux v6.12.3 - 2018-02-13T14:04:37.678Z</tspan>
+
+<tspan x="10" y="666">|   16548 ms            0 failed        8 passed      |</tspan>
+
+<tspan x="10" y="682">-------------------------------------------------------</tspan>
+
+<tspan x="10" y="698"></tspan>
+
+<tspan x="10" y="714">created test-report file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/test-repo\</tspan>
+<tspan x="10" y="730">rt.html</tspan>
+
+<tspan x="10" y="746"></tspan>
+
+<tspan x="10" y="762"></tspan>
+
+<tspan x="10" y="778">buildApidoc - 0 failed tests</tspan>
+
+<tspan x="10" y="794"></tspan>
+
+<tspan x="10" y="810"></tspan>
+
+<tspan x="10" y="826">[MODE_BUILD=buildApidoc] - 2018-02-13T14:04:59.669Z - EXIT_CODE - 0</tspan>
+
+</text>
+</svg>

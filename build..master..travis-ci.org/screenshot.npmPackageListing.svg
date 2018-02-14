@@ -1,0 +1,17 @@
+<svg height="222" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="222" fill="#555" width="720"></rect>
+<text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
+<tspan x="10" y="26">  package files</tspan>
+<tspan x="10" y="42"></tspan>
+<tspan x="10" y="58">  0.  2017-10-19 17:43:33 +0800  1249181 bytes  .</tspan>
+<tspan x="10" y="74">  1.  2017-10-19 17:43:33 +0800       99 bytes  .gitignore</tspan>
+<tspan x="10" y="90">  2.  2017-10-19 17:43:33 +0800     1317 bytes  .travis.yml</tspan>
+<tspan x="10" y="106">  3.  2017-10-19 17:43:33 +0800     1120 bytes  LICENSE</tspan>
+<tspan x="10" y="122">  4.  2017-10-19 17:43:33 +0800    23359 bytes  README.md</tspan>
+<tspan x="10" y="138">  5.  2017-10-19 17:43:33 +0800     6082 bytes  assets.swgg.swagger.json</tspan>
+<tspan x="10" y="154">  6.  2017-10-19 17:43:33 +0800  1213183 bytes  assets.utility2.rollup.js</tspan>
+<tspan x="10" y="170">  7.  2017-10-19 17:43:33 +0800     1641 bytes  lib.swgg_facebook.js</tspan>
+<tspan x="10" y="186">  8.  2017-10-19 17:43:33 +0800     1245 bytes  package.json</tspan>
+<tspan x="10" y="202">  9.  2017-10-19 17:43:33 +0800     1135 bytes  test.js</tspan>
+</text>
+</svg>
