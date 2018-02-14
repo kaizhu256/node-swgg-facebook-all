@@ -22,7 +22,7 @@ local = require("../../assets.utility2.rollup.js");
 process.argv.slice(1).forEach(function (file1, file2) {
     file2 = (file1 + "/index.html")
         .replace((/\/index.html\/|\.1\/index.html/), "/")
-        .replace('//', '/');
+        .replace("//", "/");
     if (!(/\/index.html$/).test(file2) ||
             ((/\w\.1$/).test(file1) && local.fs.existsSync(file2))) {
         local.fs.unlink(file1, local.onErrorDefault);
