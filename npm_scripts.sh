@@ -23,19 +23,11 @@ var local;
 local = require("../../assets.utility2.rollup.js");
 process.argv.slice(1).forEach(function (file) {
     file += "/index.html";
-    if (file === "developers.facebook.com/docs/graph-api/reference/index.html") {
-        return;
-    }
     local.fs.readFile(file, "utf8", function (error, data) {
         local.assert(!error, error);
         data = data.split(file).slice(-1)[0];
         data = data.split(" data-referrer=\"documentation_body_pagelet\">").slice(-1)[0];
         data = data.split("<script>")[0];
-        if (data.indexOf("Marketing Partners") >= 0) {
-            console.error("remove " + file);
-            local.fs.unlink(file, local.onErrorThrow);
-            return;
-        }
         // un-unique class
         data = data.replace((/class="(.*?)"/g), function (match0, match1) {
             match0 = match1;
@@ -49,7 +41,7 @@ process.argv.slice(1).forEach(function (file) {
         ), function (match0) {
             return decodeURIComponent((/(=http.*?)&amp;/).exec(match0)[1]);
         });
-        data = data.replace((/(<div.*?>|<\/div>)/g), "\n$1\n");
+        data = data.replace((/(<\/?(?:div|td)[^<>]*?>)/g), "\n$1\n");
         data = data.replace((/\n{2,}/g), "\n");
         //!! console.error(data);
         local.fs.writeFile(file, file + "\n" + data, local.onErrorThrow);
