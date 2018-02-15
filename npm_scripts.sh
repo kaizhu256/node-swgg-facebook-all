@@ -32,7 +32,7 @@ process.argv.slice(1).forEach(function (file) {
         data = data.replace((/class="(.*?)"/g), function (match0, match1) {
             match0 = match1;
             return "class=\"" + match0.split(" ").filter(function (element) {
-                return element[0] !== "_";
+                return !(/^_|^sp_|^sx_/).test(element);
             }).join(" ") + "\"";
         });
         // un-unique href
@@ -102,13 +102,13 @@ process.argv.slice(1).forEach(function (file1, ii, file2, options) {
                 return;
             }
             console.error("rename " + file1 + " -> " + file2);
-            local.fs.rename(file1, "/tmp/rename." + ii, options.onNext);
+            local.fs.rename(file1, "rename." + ii, options.onNext);
             break;
         case 2:
             local.fs.mkdir(local.path.dirname(file2), options.onNext);
             break;
         case 3:
-            local.fs.rename("/tmp/rename." + ii, file2, options.onNext);
+            local.fs.rename("rename." + ii, file2, options.onNext);
             break;
         default:
             local.assert(!error, error);

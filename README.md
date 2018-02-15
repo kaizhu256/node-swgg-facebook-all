@@ -56,7 +56,7 @@ this zero-dependency package will provide a swagger-client for facebook-all's we
 [![apidoc](https://kaizhu256.github.io/node-swgg-facebook-all/build/screenshot.buildCi.browser.%252Ftmp%252Fbuild%252Fapidoc.html.png)](https://kaizhu256.github.io/node-swgg-facebook-all/build..beta..travis-ci.org/apidoc.html)
 
 #### todo
-- npm publish v2018.1.18
+- npm publish v2018.1.16
 - continue adding extra facebook-all web-apis
 - none
 
@@ -377,6 +377,7 @@ instruction
 # this shell script will run the build for this package
 
 shBuildCiAfter() {(set -e
+    # shDeployCustom
     shDeployGithub
     shDeployHeroku
     shReadmeTest example.sh
