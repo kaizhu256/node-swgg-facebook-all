@@ -4,6 +4,8 @@ shNpmScriptApidocRawCreate() {(set -e
 # this function will create the raw apidoc
     cd tmp/apidoc.raw
     find developers.facebook.com/docs/graph-api/reference -type f | \
+        sed -e "s/\/index.html//" | \
+        sort | \
         xargs -n 100 node -e '
 // <script>
 /*jslint
@@ -19,31 +21,30 @@ shNpmScriptApidocRawCreate() {(set -e
 "use strict";
 var local;
 local = require("../../assets.utility2.rollup.js");
-process.argv.slice(1).forEach(function (file1, file2) {
-    local.fs.readFile(file1, "utf8", function (error, data) {
-        file2 = (file1 + "/index.html")
-            .replace((/\/index.html\/|\.1\/index.html/), "/")
-            .replace("//", "/");
-        if (!(/\/index.html$/).test(file2) ||
-                ((/\w\.1$/).test(file1) && local.fs.existsSync(file2))) {
-            local.fs.unlink(file1, local.onErrorDefault);
-            return;
-        }
+process.argv.slice(1).forEach(function (file) {
+    file += "/index.html";
+    local.fs.readFile(file, "utf8", function (error, data) {
         local.assert(!error, error);
-        if (file1 !== file2) {
-            local.fs.unlink(file1, local.onErrorDefault);
-        }
-        data = data
-            .split("<div id=\"documentation_body_pagelet\"").slice(-1)[0]
-            .split("<script>")[0];
-        local.assert(data.indexOf("<script") < 0);
-        local.fs.mkdir(local.path.dirname(file2), function () {
-            local.fs.writeFile(file2, data, local.onErrorDefault);
+        data = file + "\n" + data;
+        data = data.split("<div id=\"documentation_body_pagelet\" " +
+            "data-referrer=\"documentation_body_pagelet\">").slice(-1)[0];
+        data = data.split("<script>")[0];
+        //!! data = data.split("<a href=\"https://l.facebook.com/")[0];
+        data = data.replace((/class="(.*?)"/g), function (match0, match1) {
+            match0 = match1;
+            return "class=\"" + match0.split(" ").filter(function (element) {
+                return element[0] !== "_";
+            }).join(" ") + "\"";
         });
+        data = data.replace((/(<div.*?>|<\/div>)/g), "\n$1\n");
+        data = data.replace((/\n{2,}/g), "\n\n");
+        //!! console.error(data);
+        local.fs.writeFile(file, data, local.onErrorThrow);
     });
 });
 // </script>
         '
+        #!! ' ./developers.facebook.com/docs/graph-api/reference/work-experience
 )}
 
 shNpmScriptApidocRawFetch() {(set -e
@@ -61,8 +62,6 @@ shNpmScriptApidocRawFetch() {(set -e
             https://developers.facebook.com/docs/graph-api/reference/ 2>&1 | \
         tee wget.log
     fi
-    find developers.facebook.com/docs/graph-api/reference -name *.1 -type f | \
-        xargs -n 100 rm
     find developers.facebook.com/docs/graph-api/reference -type f | \
         xargs -n 100 node -e '
 // <script>
@@ -85,6 +84,12 @@ process.argv.slice(1).forEach(function (file1, ii, file2, options) {
         switch (options.modeNext) {
         case 1:
             file2 = (file1 + "/index.html").replace("/index.html/", "/");
+            if ((/\.1$|\?/).test(file1)) {
+                console.error("remove " + file1);
+                options.modeNext = Infinity;
+                local.fs.unlink(file1, options.onNext);
+                return;
+            }
             if (file1 === file2) {
                 return;
             }
@@ -106,53 +111,6 @@ process.argv.slice(1).forEach(function (file1, ii, file2, options) {
 });
 // </script>
         '
-    #!! find developers.facebook.com/docs/graph-api/reference -type f | \
-        #!! xargs -n 100 node -e '
-#!! // <1script>
-#!! /*jslint
-    #!! bitwise: true,
-    #!! browser: true,
-    #!! maxerr: 8,
-    #!! maxlen: 100,
-    #!! node: true,
-    #!! nomen: true,
-    #!! regexp: true,
-    #!! stupid: true
-#!! */
-#!! "use strict";
-#!! var local;
-#!! local = require("../../assets.utility2.rollup.js");
-#!! process.argv.slice(1).forEach(function (file1, ii, file2, options) {
-    #!! options = {};
-    #!! local.onNext(options, function (error, data) {
-        #!! switch (options.modeNext) {
-        #!! case 1:
-            #!! local.fs.readFile(file1, "utf8", options.onNext);
-            #!! break;
-        #!! case 2:
-            #!! options.data = data;
-            #!! file2 = (file1 + "/index.html").replace("/index.html/", "/");
-            #!! if (file1 === file2) {
-                #!! return;
-            #!! }
-            #!! console.error("rename " + file1 + " -> " + file2);
-            #!! local.fs.unlink(file1, options.onNext);
-            #!! break;
-        #!! case 3:
-            #!! local.fs.mkdir(local.path.dirname(file2), options.onNext);
-            #!! break;
-        #!! case 4:
-            #!! local.fs.rename(file1, file2, options.onNext);
-            #!! break;
-        #!! default:
-            #!! local.assert(!error, error);
-        #!! }
-    #!! });
-    #!! options.modeNext = 0;
-    #!! options.onNext();
-#!! });
-#!! // </script>
-        #!! '
 )}
 
 shNpmScriptPostinstall() {
