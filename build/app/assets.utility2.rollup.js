@@ -319,11 +319,15 @@
         local.stringHtmlSafe = function (text) {
         /*
          * this function will make the text html-safe
+         * https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-on-html
          */
-            // new RegExp('[' + '"&\'<>'.split('').sort().join('') + ']', 'g')
-            return text.replace((/["&'<>]/g), function (match0) {
-                return '&#x' + match0.charCodeAt(0).toString(16) + ';';
-            });
+            return text
+                .replace((/"/g), '&quot;')
+                .replace((/&/g), '&amp;')
+                .replace((/'/g), '&apos;')
+                .replace((/</g), '&lt;')
+                .replace((/>/g), '&gt;')
+                .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
         };
 
         local.templateRender = function (template, dict, options) {
@@ -455,12 +459,17 @@
                     value = String(value);
                     // default to htmlSafe
                     if (!notHtmlSafe) {
-                        value = value.replace((/["&'<>]/g), function (match0) {
-                            return '&#x' + match0.charCodeAt(0).toString(16) + ';';
-                        });
+                        value = value
+                            .replace((/"/g), '&quot;')
+                            .replace((/&/g), '&amp;')
+                            .replace((/'/g), '&apos;')
+                            .replace((/</g), '&lt;')
+                            .replace((/>/g), '&gt;')
+                            .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
                     }
                     if (markdownToHtml && typeof local.marked === 'function') {
-                        value = local.marked(value);
+                        value = local.marked(value)
+                            .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
                     }
                     return value;
                 }, 'templateRender could not render expression ' + JSON.stringify(match0) + '\n');
@@ -20722,11 +20731,15 @@ instruction\n\
         local.stringHtmlSafe = function (text) {
         /*
          * this function will make the text html-safe
+         * https://stackoverflow.com/questions/7381974/which-characters-need-to-be-escaped-on-html
          */
-            // new RegExp('[' + '"&\'<>'.split('').sort().join('') + ']', 'g')
-            return text.replace((/["&'<>]/g), function (match0) {
-                return '&#x' + match0.charCodeAt(0).toString(16) + ';';
-            });
+            return text
+                .replace((/"/g), '&quot;')
+                .replace((/&/g), '&amp;')
+                .replace((/'/g), '&apos;')
+                .replace((/</g), '&lt;')
+                .replace((/>/g), '&gt;')
+                .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
         };
 
         local.stringRegexpEscape = function (text) {
@@ -20996,12 +21009,17 @@ instruction\n\
                     value = String(value);
                     // default to htmlSafe
                     if (!notHtmlSafe) {
-                        value = value.replace((/["&'<>]/g), function (match0) {
-                            return '&#x' + match0.charCodeAt(0).toString(16) + ';';
-                        });
+                        value = value
+                            .replace((/"/g), '&quot;')
+                            .replace((/&/g), '&amp;')
+                            .replace((/'/g), '&apos;')
+                            .replace((/</g), '&lt;')
+                            .replace((/>/g), '&gt;')
+                            .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
                     }
                     if (markdownToHtml && typeof local.marked === 'function') {
-                        value = local.marked(value);
+                        value = local.marked(value)
+                            .replace((/&amp;(amp;|apos;|gt;|lt;|quot;)/ig), '&$1');
                     }
                     return value;
                 }, 'templateRender could not render expression ' + JSON.stringify(match0) + '\n');
