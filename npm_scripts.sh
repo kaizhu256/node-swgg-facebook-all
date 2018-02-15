@@ -43,13 +43,11 @@ process.argv.slice(1).forEach(function (file) {
         });
         data = data.replace((/(<\/?(?:div|td)[^<>]*?>)/g), "\n$1\n");
         data = data.replace((/\n{2,}/g), "\n");
-        //!! console.error(data);
         local.fs.writeFile(file, file + "\n" + data, local.onErrorThrow);
     });
 });
 // </script>
         '
-        #!! ' ./developers.facebook.com/docs/graph-api/reference/work-experience
 )}
 
 shNpmScriptApidocRawFetch() {(set -e
