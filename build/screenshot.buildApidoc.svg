@@ -1,9 +1,9 @@
-<svg height="846" width="720" xmlns="http://www.w3.org/2000/svg">
-<rect height="846" fill="#555" width="720"></rect>
+<svg height="862" width="720" xmlns="http://www.w3.org/2000/svg">
+<rect height="862" fill="#555" width="720"></rect>
 <text fill="#7f7" font-family="Courier New" font-size="12" xml:space="preserve">
 <tspan x="10" y="26"></tspan>
 
-<tspan x="10" y="42">[MODE_BUILD=buildApidoc] - 2018-02-15T08:29:55.543Z - npm-testing /home/travis/build/kaizhu256/n\</tspan>
+<tspan x="10" y="42">[MODE_BUILD=buildApidoc] - 2018-02-15T08:38:16.252Z - npm-testing /home/travis/build/kaizhu256/n\</tspan>
 <tspan x="10" y="58">ode-swgg-facebook-all</tspan>
 
 <tspan x="10" y="74"></tspan>
@@ -15,85 +15,87 @@
 
 <tspan x="10" y="138">override assets assets.swgg.swagger.json</tspan>
 
-<tspan x="10" y="154">&gt; server listening on http-port 48588</tspan>
+<tspan x="10" y="154">&gt; server listening on http-port 35983</tspan>
 
 <tspan x="10" y="170">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/package.json</tspan>
 
-<tspan x="10" y="186">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/assets.swgg.swagg\</tspan>
-<tspan x="10" y="202">er.json</tspan>
+<tspan x="10" y="186">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.apidoc.raw.html</tspan>
 
-<tspan x="10" y="218">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.gitignore</tspan>
+<tspan x="10" y="202">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/assets.swgg.swagg\</tspan>
+<tspan x="10" y="218">er.json</tspan>
 
-<tspan x="10" y="234">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/lib.swgg_facebook\</tspan>
-<tspan x="10" y="250">_all.js</tspan>
+<tspan x="10" y="234">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.gitignore</tspan>
 
-<tspan x="10" y="266">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/LICENSE</tspan>
+<tspan x="10" y="250">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/lib.swgg_facebook\</tspan>
+<tspan x="10" y="266">_all.js</tspan>
 
-<tspan x="10" y="282">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/npm_scripts.sh</tspan>
+<tspan x="10" y="282">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/LICENSE</tspan>
 
-<tspan x="10" y="298">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/package.json</tspan>
+<tspan x="10" y="298">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/npm_scripts.sh</tspan>
 
-<tspan x="10" y="314">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/README.md</tspan>
+<tspan x="10" y="314">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/package.json</tspan>
 
-<tspan x="10" y="330">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/test.js</tspan>
+<tspan x="10" y="330">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/README.md</tspan>
 
-<tspan x="10" y="346">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.travis.yml</tspan>
+<tspan x="10" y="346">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/test.js</tspan>
 
-<tspan x="10" y="362">apidocCreate - requiring /home/travis/build/kaizhu256/node-swgg-facebook-all ...</tspan>
+<tspan x="10" y="362">apidocCreate - readExample /home/travis/build/kaizhu256/node-swgg-facebook-all/.travis.yml</tspan>
 
-<tspan x="10" y="378">apidocCreate - ... required /home/travis/build/kaizhu256/node-swgg-facebook-all</tspan>
+<tspan x="10" y="378">apidocCreate - requiring /home/travis/build/kaizhu256/node-swgg-facebook-all ...</tspan>
 
-<tspan x="10" y="394">created apidoc file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/apidoc.html</tspan>
+<tspan x="10" y="394">apidocCreate - ... required /home/travis/build/kaizhu256/node-swgg-facebook-all</tspan>
 
-<tspan x="10" y="410"></tspan>
+<tspan x="10" y="410">created apidoc file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/apidoc.html</tspan>
 
-<tspan x="10" y="426">[node test-case 1 of 1 passed] - testCase_buildApidoc_default</tspan>
+<tspan x="10" y="426"></tspan>
 
-<tspan x="10" y="442"></tspan>
+<tspan x="10" y="442">[node test-case 1 of 1 passed] - testCase_buildApidoc_default</tspan>
 
-<tspan x="10" y="458">buildApidoc - merged test-report from file /home/travis/build/kaizhu256/node-swgg-facebook-all/t\</tspan>
-<tspan x="10" y="474">mp/build/test-report.json</tspan>
+<tspan x="10" y="458"></tspan>
 
-<tspan x="10" y="490"></tspan>
+<tspan x="10" y="474">buildApidoc - merged test-report from file /home/travis/build/kaizhu256/node-swgg-facebook-all/t\</tspan>
+<tspan x="10" y="490">mp/build/test-report.json</tspan>
 
-<tspan x="10" y="506">-------------------------------------------------------</tspan>
+<tspan x="10" y="506"></tspan>
 
-<tspan x="10" y="522">| test-report - buildApidoc - node - linux v6.13.0 - 2018-02-15T08:29:55.882Z</tspan>
+<tspan x="10" y="522">-------------------------------------------------------</tspan>
 
-<tspan x="10" y="538">|     190 ms            0 failed        1 passed      |</tspan>
+<tspan x="10" y="538">| test-report - buildApidoc - node - linux v6.13.0 - 2018-02-15T08:38:16.489Z</tspan>
 
-<tspan x="10" y="554">-------------------------------------------------------</tspan>
+<tspan x="10" y="554">|     236 ms            0 failed        1 passed      |</tspan>
 
-<tspan x="10" y="570">| test-report - npmTest - browser - /index.default.html - Mozilla/5.0 (X11; Linux x86_64) AppleW\</tspan>
-<tspan x="10" y="586">ebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Electron/1.6.15 Safari/537.36 - 2018-02-15T\</tspan>
-<tspan x="10" y="602">08:29:37.439Z</tspan>
+<tspan x="10" y="570">-------------------------------------------------------</tspan>
 
-<tspan x="10" y="618">|      47 ms            0 failed        8 passed      |</tspan>
+<tspan x="10" y="586">| test-report - npmTest - browser - /index.default.html - Mozilla/5.0 (X11; Linux x86_64) AppleW\</tspan>
+<tspan x="10" y="602">ebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Electron/1.6.15 Safari/537.36 - 2018-02-15T\</tspan>
+<tspan x="10" y="618">08:37:58.829Z</tspan>
 
-<tspan x="10" y="634">-------------------------------------------------------</tspan>
+<tspan x="10" y="634">|      40 ms            0 failed        8 passed      |</tspan>
 
-<tspan x="10" y="650">| test-report - npmTest - node - linux v6.13.0 - 2018-02-15T08:29:34.357Z</tspan>
+<tspan x="10" y="650">-------------------------------------------------------</tspan>
 
-<tspan x="10" y="666">|   17177 ms            0 failed        8 passed      |</tspan>
+<tspan x="10" y="666">| test-report - npmTest - node - linux v6.13.0 - 2018-02-15T08:37:56.803Z</tspan>
 
-<tspan x="10" y="682">-------------------------------------------------------</tspan>
+<tspan x="10" y="682">|   16413 ms            0 failed        8 passed      |</tspan>
 
-<tspan x="10" y="698"></tspan>
+<tspan x="10" y="698">-------------------------------------------------------</tspan>
 
-<tspan x="10" y="714">created test-report file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/test-repo\</tspan>
-<tspan x="10" y="730">rt.html</tspan>
+<tspan x="10" y="714"></tspan>
 
-<tspan x="10" y="746"></tspan>
+<tspan x="10" y="730">created test-report file /home/travis/build/kaizhu256/node-swgg-facebook-all/tmp/build/test-repo\</tspan>
+<tspan x="10" y="746">rt.html</tspan>
 
 <tspan x="10" y="762"></tspan>
 
-<tspan x="10" y="778">buildApidoc - 0 failed tests</tspan>
+<tspan x="10" y="778"></tspan>
 
-<tspan x="10" y="794"></tspan>
+<tspan x="10" y="794">buildApidoc - 0 failed tests</tspan>
 
 <tspan x="10" y="810"></tspan>
 
-<tspan x="10" y="826">[MODE_BUILD=buildApidoc] - 2018-02-15T08:29:58.289Z - EXIT_CODE - 0</tspan>
+<tspan x="10" y="826"></tspan>
+
+<tspan x="10" y="842">[MODE_BUILD=buildApidoc] - 2018-02-15T08:38:18.520Z - EXIT_CODE - 0</tspan>
 
 </text>
 </svg>
