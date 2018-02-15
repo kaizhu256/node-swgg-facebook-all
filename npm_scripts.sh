@@ -43,11 +43,16 @@ process.argv.slice(1).forEach(function (file) {
         });
         data = data.replace((/(<\/?(?:div|td)[^<>]*?>)/g), "\n$1\n");
         data = data.replace((/\n{2,}/g), "\n");
-        local.fs.writeFile(file, file + "\n" + data, local.onErrorThrow);
+        local.fs.writeFile(file, file + "\n\n" + data.trim() + "\n\n\n\n", local.onErrorThrow);
     });
 });
 // </script>
         '
+    find developers.facebook.com/docs/graph-api/reference -type f | \
+        sed -e "s/\/index.html//" | \
+        sort | \
+        xargs -I @ -n 1 sh -c "cat @/index.html" > .apidoc.raw.html
+    cp .apidoc.raw.html ../..
 )}
 
 shNpmScriptApidocRawFetch() {(set -e
