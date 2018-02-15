@@ -238,7 +238,7 @@ Type
 <p><code>owner_access_token</code></p>
 </td>
 <td>
-<p>When associating existing test users with other apps, this is the app access token of any app that is already associated with the test user. The <code>&#123;app-id&#125;</code> in the publishing request in this case should be the app that will is the target to associate with the test user. The API request should also be signed with the app access token of that target app. 
+<p>When associating existing test users with other apps, this is the app access token of any app that is already associated with the test user. The <code>&#123;app-id&#125;</code> in the publishing request in this case should be the app that will is the target to associate with the test user. The API request should also be signed with the app access token of that target app.
 Required when associating test users, but should not be used when creating new test users.</p>
 </td>
 <td>
@@ -259,9 +259,9 @@ Required when associating test users, but should not be used when creating new t
 <h3 id="pubresponse">Response</h3><p>When a test user is successfully created or associated the following will be returned, otherwise an error message will be shown:</p>
 <div class="">
 <table class=""><thead><th>
-Name 
+Name
 </th><th>
- Description 
+ Description
 </th><th>
  Type
 </th></thead><tbody><tr>
@@ -383,7 +383,7 @@ The associated app access token is required to disassociate a test user.
 </div>
 </li><li>
 <div class="fcb">
-A test user must still be associated with any single app after this operation, otherwise an error message (<code>2902</code>) will be shown. 
+A test user must still be associated with any single app after this operation, otherwise an error message (<code>2902</code>) will be shown.
 </div>
 </li></ul><h3 id="delfields">Fields</h3>
 <div class="">
